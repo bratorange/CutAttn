@@ -4,6 +4,7 @@ from data.image_folder import make_dataset
 from PIL import Image
 import random
 import util.util as util
+from data.transform import add_circle_mask, constant_circle_mask
 
 
 class UnalignedDataset(BaseDataset):
@@ -64,7 +65,7 @@ class UnalignedDataset(BaseDataset):
         is_finetuning = self.opt.isTrain and self.current_epoch > self.opt.n_epochs
         modified_opt = util.copyconf(self.opt, load_size=self.opt.crop_size if is_finetuning else self.opt.load_size)
         transform = get_transform(modified_opt)
-        A = transform(A_img)
+        A = transform(constant_circle_mask(A_img) if self.opt.no_random_mask else add_circle_mask(A_img))
         B = transform(B_img)
 
         return {'A': A, 'B': B, 'A_paths': A_path, 'B_paths': B_path}
