@@ -214,15 +214,16 @@ class BaseModel(ABC):
                 print('loading the model from %s' % load_path)
                 # if you are using PyTorch newer than 0.4 (e.g., built from
                 # GitHub source), you can remove str() on self.device
-                state_dict = torch.load(load_path, map_location=str(self.device))
-                if hasattr(state_dict, '_metadata'):
-                    del state_dict._metadata
+                pretrained_dict = torch.load(load_path, map_location=str(self.device))
+                if hasattr(pretrained_dict, '_metadata'):
+                    del pretrained_dict._metadata
 
+                expanded_dict = net.state_dict()
+                expanded_dict.update(pretrained_dict)
                 # patch InstanceNorm checkpoints prior to 0.4
                 # for key in list(state_dict.keys()):  # need to copy keys here because we mutate in loop
                 #    self.__patch_instance_norm_state_dict(state_dict, net, key.split('.'))
-                print(net.state_dict().keys())
-                net.load_state_dict(state_dict)
+                net.load_state_dict(expanded_dict)
 
     def print_networks(self, verbose):
         """Print the total number of parameters in the network and (if verbose) network architecture

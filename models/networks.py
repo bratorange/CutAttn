@@ -1012,7 +1012,7 @@ class ResnetGenerator(nn.Module):
 
         self.model = nn.Sequential(*model)
 
-    def forward(self, input, layers=[], encode_only=False):
+    def forward(self, input, style, layers=[], encode_only=False):
         if -1 in layers:
             layers.append(len(self.model))
         if len(layers) > 0:
@@ -1039,14 +1039,14 @@ class ResnetGenerator(nn.Module):
 
 
 class AdaAttnResnet(ResnetGenerator):
-    def __init__(self, input_nc, output_nc, ngf=64, norm_layer=nn.BatchNorm2d, use_dropout=False, n_blocks=6,
+    def __init__(self, input_nc, output_nc, ngf=64, norm_layer=nn.BatchNorm2d, use_dropout=False, n_blocks=9,
                  padding_type='reflect', no_antialias=False, no_antialias_up=False, opt=None):
         super().__init__(input_nc, output_nc, ngf, norm_layer, use_dropout, n_blocks, padding_type, no_antialias,
                          no_antialias_up, opt)
         # use the nr of channels in the resnet blocks
         atn_block = AdaAttN(in_planes=256)
         self.atn_block = init_net(atn_block, opt.init_type, opt.init_gain, opt.gpu_ids)
-        self.attention_layer = 13
+        self.attention_layer = 16
 
     def forward(self, input, style, layers=[], encode_only=False):
         if -1 in layers:
