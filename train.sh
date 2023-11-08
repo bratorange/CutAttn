@@ -1,5 +1,5 @@
 python train.py \
-  --name resnet_atn_09_start_spectral_norm \
+  --name resnet_atn_09_start_spectral_norm_test \
   --CUT_mode CUT \
   --dataroot dataset \
   --netG resnet_adain \
