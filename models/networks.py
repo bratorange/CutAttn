@@ -6,7 +6,7 @@ import functools
 from torch.optim import lr_scheduler
 import numpy as np
 
-from .AdaAttN import AdaAttN
+from .AdaNorm import AdaAttN, adaptive_instance_normalization
 from .stylegan_networks import StyleGAN2Discriminator, StyleGAN2Generator, TileStyleGAN2Discriminator
 
 
@@ -255,8 +255,11 @@ def define_G(input_nc, output_nc, ngf, netG, norm='batch', use_dropout=False, in
     norm_layer = get_norm_layer(norm_type=norm)
 
     if netG == 'resnet_atn':
-        net = AdaAttnResnet(input_nc, output_nc, ngf, norm_layer=norm_layer, use_dropout=use_dropout,
+        net = AdaNormResnet(input_nc, output_nc, ngf, norm_layer=norm_layer, use_dropout=use_dropout,
                             no_antialias=no_antialias, no_antialias_up=no_antialias_up, n_blocks=9, opt=opt)
+    elif netG == 'resnet_adain':
+        net = AdaNormResnet(input_nc, output_nc, ngf, norm_layer=norm_layer, use_dropout=use_dropout,
+                            no_antialias=no_antialias, no_antialias_up=no_antialias_up, n_blocks=9, opt=opt, adain=True)
     elif netG == 'resnet_9blocks':
         net = ResnetGenerator(input_nc, output_nc, ngf, norm_layer=norm_layer, use_dropout=use_dropout,
                               no_antialias=no_antialias, no_antialias_up=no_antialias_up, n_blocks=9, opt=opt)
@@ -1038,15 +1041,17 @@ class ResnetGenerator(nn.Module):
             return fake
 
 
-class AdaAttnResnet(ResnetGenerator):
+class AdaNormResnet(ResnetGenerator):
     def __init__(self, input_nc, output_nc, ngf=64, norm_layer=nn.BatchNorm2d, use_dropout=False, n_blocks=9,
-                 padding_type='reflect', no_antialias=False, no_antialias_up=False, opt=None):
+                 padding_type='reflect', no_antialias=False, no_antialias_up=False, opt=None, adain=False):
         super().__init__(input_nc, output_nc, ngf, norm_layer, use_dropout, n_blocks, padding_type, no_antialias,
                          no_antialias_up, opt)
         # use the nr of channels in the resnet blocks
-        atn_block = AdaAttN(in_planes=256)
-        self.atn_block = init_net(atn_block, opt.init_type, opt.init_gain, opt.gpu_ids)
-        self.attention_layer = 16
+        self.adain = adain
+        if not self.adain:
+            atn_block = AdaAttN(in_planes=256)
+            self.atn_block = init_net(atn_block, opt.init_type, opt.init_gain, opt.gpu_ids)
+        self.ada_norm_layer = 14
 
     def forward(self, input, style, layers=[], encode_only=False):
         if -1 in layers:
@@ -1054,7 +1059,7 @@ class AdaAttnResnet(ResnetGenerator):
 
         # prepare style features
         style_feats = style
-        for layer_id, layer in enumerate(self.model[:self.attention_layer]):
+        for layer_id, layer in enumerate(self.model[:self.ada_norm_layer]):
             style_feats = layer(style_feats)
 
         feat = input
@@ -1062,11 +1067,17 @@ class AdaAttnResnet(ResnetGenerator):
         for layer_id, layer in enumerate(self.model):
             # print(layer_id, layer)
             # run through the attention layer
-            if layer_id == self.attention_layer:
-                feat_list = [
-                    self.atn_block(sample.unsqueeze(dim=0), style_feats, sample.unsqueeze(dim=0), style_feats)
-                    for sample in feat]
-                feat = torch.cat(feat_list, dim=0)
+            if layer_id == self.ada_norm_layer:
+                if self.adain:
+                    feat_list = [
+                        adaptive_instance_normalization(sample.unsqueeze(dim=0), style_feats)
+                        for sample in feat]
+                    feat = torch.cat(feat_list, dim=0)
+                else:
+                    feat_list = [
+                        self.atn_block(sample.unsqueeze(dim=0), style_feats, sample.unsqueeze(dim=0), style_feats)
+                        for sample in feat]
+                    feat = torch.cat(feat_list, dim=0)
             feat = layer(feat)
             if layer_id in layers:
                 # print("%d: adding the output of %s %d" % (layer_id, layer.__class__.__name__, feat.size(1)))
