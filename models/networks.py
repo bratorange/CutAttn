@@ -1044,7 +1044,7 @@ class ResnetGenerator(nn.Module):
         else:
             """Standard forward"""
             fake = self.model(input)
-            return fake
+            return fake, None
 
 
 class AdaNormResnet(ResnetGenerator):
