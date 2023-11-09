@@ -258,10 +258,12 @@ def define_G(input_nc, output_nc, ngf, netG, norm='batch', use_dropout=False, in
 
     if netG == 'resnet_atn':
         net = AdaNormResnet(input_nc, output_nc, ngf, norm_layer=norm_layer, use_dropout=use_dropout,
-                            no_antialias=no_antialias, no_antialias_up=no_antialias_up, n_blocks=9, opt=opt)
+                            no_antialias=no_antialias, no_antialias_up=no_antialias_up, n_blocks=9, opt=opt,
+                            ada_norm_layers= [int(i) for i in opt.ada_norm_layers.split(',')],)
     elif netG == 'resnet_adain':
         net = AdaNormResnet(input_nc, output_nc, ngf, norm_layer=norm_layer, use_dropout=use_dropout,
-                            no_antialias=no_antialias, no_antialias_up=no_antialias_up, n_blocks=9, opt=opt, adain=True)
+                            no_antialias=no_antialias, no_antialias_up=no_antialias_up, n_blocks=9, opt=opt, adain=True,
+                            ada_norm_layers= [int(i) for i in opt.ada_norm_layers.split(',')], )
     elif netG == 'resnet_9blocks':
         net = ResnetGenerator(input_nc, output_nc, ngf, norm_layer=norm_layer, use_dropout=use_dropout,
                               no_antialias=no_antialias, no_antialias_up=no_antialias_up, n_blocks=9, opt=opt)
@@ -342,7 +344,7 @@ def define_D(input_nc, ndf, netD, n_layers_D=3, norm='batch', init_type='normal'
     if netD == 'basic':  # default PatchGAN classifier
         net = NLayerDiscriminator(input_nc, ndf, n_layers=3, norm_layer=norm_layer, no_antialias=no_antialias, )
     elif netD == 'basic_spectral_norm':  # default PatchGAN classifier
-        net = NLayerDiscriminator(input_nc, ndf, n_layers=3, norm_layer=norm_layer, no_antialias=no_antialias, use_spectral_norm=True)
+        net = NLayerDiscriminator(input_nc, ndf, n_layers=3, norm_layer=norm_layer, no_antialias=no_antialias, use_spectral_norm=True, )
     elif netD == 'n_layers':  # more options
         net = NLayerDiscriminator(input_nc, ndf, n_layers_D, norm_layer=norm_layer, no_antialias=no_antialias, )
     elif netD == 'pixel':  # classify if each pixel is real or fake
@@ -1047,7 +1049,7 @@ class ResnetGenerator(nn.Module):
 
 class AdaNormResnet(ResnetGenerator):
     def __init__(self, input_nc, output_nc, ngf=64, norm_layer=nn.BatchNorm2d, use_dropout=False, n_blocks=9,
-                 padding_type='reflect', no_antialias=False, no_antialias_up=False, opt=None, adain=False):
+                 padding_type='reflect', no_antialias=False, no_antialias_up=False, opt=None, adain=False, ada_norm_layers = [], ):
         super().__init__(input_nc, output_nc, ngf, norm_layer, use_dropout, n_blocks, padding_type, no_antialias,
                          no_antialias_up, opt)
         # use the nr of channels in the resnet blocks
@@ -1055,7 +1057,7 @@ class AdaNormResnet(ResnetGenerator):
         if not self.adain:
             atn_block = AdaAttN(in_planes=256)
             self.atn_block = init_net(atn_block, opt.init_type, opt.init_gain, opt.gpu_ids)
-        self.ada_norm_layer = 14
+        self.ada_norm_layers = ada_norm_layers
 
     def forward(self, input, style, layers=[], encode_only=False):
         if -1 in layers:
@@ -1063,23 +1065,23 @@ class AdaNormResnet(ResnetGenerator):
 
         # prepare style features
         style_feats = style
-        for layer_id, layer in enumerate(self.model[:self.ada_norm_layer]):
-            style_feats = layer(style_feats)
-
         feat = input
         feats = []
         for layer_id, layer in enumerate(self.model):
+            if max(self.ada_norm_layers) >= layer_id:
+                style_feats = layer(style_feats)
+                current_style_feat = style_feats
             # print(layer_id, layer)
             # run through the attention layer
-            if layer_id == self.ada_norm_layer:
+            if layer_id in self.ada_norm_layers:
                 if self.adain:
                     feat_list = [
-                        adaptive_instance_normalization(sample.unsqueeze(dim=0), style_feats)
+                        adaptive_instance_normalization(sample.unsqueeze(dim=0), current_style_feat)
                         for sample in feat]
                     feat = torch.cat(feat_list, dim=0)
                 else:
                     feat_list = [
-                        self.atn_block(sample.unsqueeze(dim=0), style_feats, sample.unsqueeze(dim=0), style_feats)
+                        self.atn_block(sample.unsqueeze(dim=0), current_style_feat, sample.unsqueeze(dim=0), current_style_feat)
                         for sample in feat]
                     feat = torch.cat(feat_list, dim=0)
             feat = layer(feat)

@@ -19,6 +19,7 @@ class CUTModel(BaseModel):
     def modify_commandline_options(parser, is_train=True):
         """  Configures options specific for CUT model
         """
+        parser.add_argument('--ada_norm_layers', type=str, default='13', help = 'On which layers to apply the adaptive style normalization')
         parser.add_argument('--CUT_mode', type=str, default="CUT", choices='(CUT, cut, FastCUT, fastcut)')
 
         parser.add_argument('--lambda_GAN', type=float, default=1.0, help='weight for GAN loss：GAN(G(X))')
