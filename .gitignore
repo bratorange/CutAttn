@@ -9,6 +9,8 @@ checkpoints/
 results/
 build/
 dist/
+dataset
+venv/
 *.png
 torch.egg-info/
 */**/__pycache__
@@ -45,3 +47,4 @@ test/.coverage
 test/data/legacy_serialized.pt
 *~
 .idea
+
