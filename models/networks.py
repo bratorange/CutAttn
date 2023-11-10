@@ -259,11 +259,11 @@ def define_G(input_nc, output_nc, ngf, netG, norm='batch', use_dropout=False, in
     if netG == 'resnet_atn':
         net = AdaNormResnet(input_nc, output_nc, ngf, norm_layer=norm_layer, use_dropout=use_dropout,
                             no_antialias=no_antialias, no_antialias_up=no_antialias_up, n_blocks=9, opt=opt,
-                            ada_norm_layers= [int(i) for i in opt.ada_norm_layers.split(',')],)
+                            ada_norm_layers=[int(i) for i in opt.ada_norm_layers.split(',')], )
     elif netG == 'resnet_adain':
         net = AdaNormResnet(input_nc, output_nc, ngf, norm_layer=norm_layer, use_dropout=use_dropout,
                             no_antialias=no_antialias, no_antialias_up=no_antialias_up, n_blocks=9, opt=opt, adain=True,
-                            ada_norm_layers= [int(i) for i in opt.ada_norm_layers.split(',')], )
+                            ada_norm_layers=[int(i) for i in opt.ada_norm_layers.split(',')], )
     elif netG == 'resnet_9blocks':
         net = ResnetGenerator(input_nc, output_nc, ngf, norm_layer=norm_layer, use_dropout=use_dropout,
                               no_antialias=no_antialias, no_antialias_up=no_antialias_up, n_blocks=9, opt=opt)
@@ -344,7 +344,8 @@ def define_D(input_nc, ndf, netD, n_layers_D=3, norm='batch', init_type='normal'
     if netD == 'basic':  # default PatchGAN classifier
         net = NLayerDiscriminator(input_nc, ndf, n_layers=3, norm_layer=norm_layer, no_antialias=no_antialias, )
     elif netD == 'basic_spectral_norm':  # default PatchGAN classifier
-        net = NLayerDiscriminator(input_nc, ndf, n_layers=3, norm_layer=norm_layer, no_antialias=no_antialias, use_spectral_norm=True, )
+        net = NLayerDiscriminator(input_nc, ndf, n_layers=3, norm_layer=norm_layer, no_antialias=no_antialias,
+                                  use_spectral_norm=True, )
     elif netD == 'n_layers':  # more options
         net = NLayerDiscriminator(input_nc, ndf, n_layers_D, norm_layer=norm_layer, no_antialias=no_antialias, )
     elif netD == 'pixel':  # classify if each pixel is real or fake
@@ -1049,15 +1050,16 @@ class ResnetGenerator(nn.Module):
 
 class AdaNormResnet(ResnetGenerator):
     def __init__(self, input_nc, output_nc, ngf=64, norm_layer=nn.BatchNorm2d, use_dropout=False, n_blocks=9,
-                 padding_type='reflect', no_antialias=False, no_antialias_up=False, opt=None, adain=False, ada_norm_layers = [], ):
+                 padding_type='reflect', no_antialias=False, no_antialias_up=False, opt=None, adain=False,
+                 ada_norm_layers=[], ):
         super().__init__(input_nc, output_nc, ngf, norm_layer, use_dropout, n_blocks, padding_type, no_antialias,
                          no_antialias_up, opt)
         # use the nr of channels in the resnet blocks
         self.adain = adain
-        if not self.adain:
-            atn_block = AdaAttN(in_planes=256)
-            self.atn_block = init_net(atn_block, opt.init_type, opt.init_gain, opt.gpu_ids)
         self.ada_norm_layers = ada_norm_layers
+        if not self.adain:
+            self.atn_blocks = {layer: init_net(AdaAttN(in_planes=256), opt.init_type, opt.init_gain, opt.gpu_ids)
+                               for layer in self.ada_norm_layers}
 
     def forward(self, input, style, layers=[], encode_only=False):
         if -1 in layers:
@@ -1081,7 +1083,7 @@ class AdaNormResnet(ResnetGenerator):
                     feat = torch.cat(feat_list, dim=0)
                 else:
                     feat_list = [
-                        self.atn_block(sample.unsqueeze(dim=0), current_style_feat, sample.unsqueeze(dim=0), current_style_feat)
+                        self.atn_blocks[layer_id](sample.unsqueeze(dim=0), current_style_feat, sample.unsqueeze(dim=0), current_style_feat)
                         for sample in feat]
                     feat = torch.cat(feat_list, dim=0)
             feat = layer(feat)
@@ -1097,7 +1099,6 @@ class AdaNormResnet(ResnetGenerator):
                     return feats  # return intermediate features alone; stop in the last layers
 
         return feat, feats  # return both output and intermediate features
-
 
 
 class ResnetDecoder(nn.Module):
@@ -1384,7 +1385,8 @@ class UnetSkipConnectionBlock(nn.Module):
 class NLayerDiscriminator(nn.Module):
     """Defines a PatchGAN discriminator"""
 
-    def __init__(self, input_nc, ndf=64, n_layers=3, norm_layer=nn.BatchNorm2d, no_antialias=False, use_spectral_norm = False):
+    def __init__(self, input_nc, ndf=64, n_layers=3, norm_layer=nn.BatchNorm2d, no_antialias=False,
+                 use_spectral_norm=False):
         """Construct a PatchGAN discriminator
 
         Parameters:
@@ -1403,11 +1405,13 @@ class NLayerDiscriminator(nn.Module):
         kw = 4
         padw = 1
         if (no_antialias):
-            sequence = [spectral_norm(nn.Conv2d(input_nc, ndf, kernel_size=kw, stride=2, padding=padw)) if self.use_spectral_norm
+            sequence = [spectral_norm(
+                nn.Conv2d(input_nc, ndf, kernel_size=kw, stride=2, padding=padw)) if self.use_spectral_norm
                         else nn.Conv2d(input_nc, ndf, kernel_size=kw, stride=2, padding=padw),
                         nn.LeakyReLU(0.2, True)]
         else:
-            sequence = [spectral_norm(nn.Conv2d(input_nc, ndf, kernel_size=kw, stride=1, padding=padw)) if self.use_spectral_norm
+            sequence = [spectral_norm(
+                nn.Conv2d(input_nc, ndf, kernel_size=kw, stride=1, padding=padw)) if self.use_spectral_norm
                         else nn.Conv2d(input_nc, ndf, kernel_size=kw, stride=1, padding=padw),
                         nn.LeakyReLU(0.2, True),
                         Downsample(ndf)]
@@ -1418,15 +1422,19 @@ class NLayerDiscriminator(nn.Module):
             nf_mult = min(2 ** n, 8)
             if (no_antialias):
                 sequence += [
-                    spectral_norm(nn.Conv2d(ndf * nf_mult_prev, ndf * nf_mult, kernel_size=kw, stride=2, padding=padw, bias=use_bias)) if self.use_spectral_norm
-                    else nn.Conv2d(ndf * nf_mult_prev, ndf * nf_mult, kernel_size=kw, stride=2, padding=padw, bias=use_bias),
+                    spectral_norm(nn.Conv2d(ndf * nf_mult_prev, ndf * nf_mult, kernel_size=kw, stride=2, padding=padw,
+                                            bias=use_bias)) if self.use_spectral_norm
+                    else nn.Conv2d(ndf * nf_mult_prev, ndf * nf_mult, kernel_size=kw, stride=2, padding=padw,
+                                   bias=use_bias),
                     norm_layer(ndf * nf_mult),
                     nn.LeakyReLU(0.2, True)
                 ]
             else:
                 sequence += [
-                    spectral_norm(nn.Conv2d(ndf * nf_mult_prev, ndf * nf_mult, kernel_size=kw, stride=1, padding=padw, bias=use_bias)) if self.use_spectral_norm
-                    else nn.Conv2d(ndf * nf_mult_prev, ndf * nf_mult, kernel_size=kw, stride=1, padding=padw, bias=use_bias),
+                    spectral_norm(nn.Conv2d(ndf * nf_mult_prev, ndf * nf_mult, kernel_size=kw, stride=1, padding=padw,
+                                            bias=use_bias)) if self.use_spectral_norm
+                    else nn.Conv2d(ndf * nf_mult_prev, ndf * nf_mult, kernel_size=kw, stride=1, padding=padw,
+                                   bias=use_bias),
                     norm_layer(ndf * nf_mult),
                     nn.LeakyReLU(0.2, True),
                     Downsample(ndf * nf_mult)]
@@ -1434,7 +1442,8 @@ class NLayerDiscriminator(nn.Module):
         nf_mult_prev = nf_mult
         nf_mult = min(2 ** n_layers, 8)
         sequence += [
-            spectral_norm(nn.Conv2d(ndf * nf_mult_prev, ndf * nf_mult, kernel_size=kw, stride=1, padding=padw, bias=use_bias)) if self.use_spectral_norm
+            spectral_norm(nn.Conv2d(ndf * nf_mult_prev, ndf * nf_mult, kernel_size=kw, stride=1, padding=padw,
+                                    bias=use_bias)) if self.use_spectral_norm
             else nn.Conv2d(ndf * nf_mult_prev, ndf * nf_mult, kernel_size=kw, stride=1, padding=padw, bias=use_bias),
             norm_layer(ndf * nf_mult),
             nn.LeakyReLU(0.2, True)
@@ -1448,7 +1457,6 @@ class NLayerDiscriminator(nn.Module):
     def forward(self, input):
         """Standard forward."""
         return self.model(input)
-
 
 
 class PixelDiscriminator(nn.Module):
