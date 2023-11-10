@@ -1,6 +1,5 @@
 import argparse
 import os
-import sys
 
 from experiments.tmux_launcher import Options
 
@@ -96,20 +95,33 @@ parser_train.add_argument('experiment_id', type=int)
 parser_test = subparsers.add_parser('test')
 parser_test.add_argument('experiment_id', type=int)
 parser_test.add_argument('epoch', default='latest')
+parser_test.add_argument("--num_test", type=int, default=50)
 
 parser_list = subparsers.add_parser('list')
 
-args = parser.parse_args()
-print(args)
+parser_eval = subparsers.add_parser('eval')
+parser_eval.add_argument('experiment_id', type=int)
+parser_eval.add_argument('epoch', default='latest')
+parser_eval.add_argument('--batch_size', type=int, default=4)
 
+args = parser.parse_args()
+for k, v in sorted(vars(args).items()):
+    print(f"{k}: {v}")
 if args.subcommand == "train":
     command = "python train.py " + str(experiments[args.experiment_id].set(n_epochs=15, n_epochs_decay=0))
     print(command)
     os.system(command)
 elif args.subcommand == "test":
-    command = "python test.py " + str(experiments[args.experiment_id].set(epoch=args.epoch, num_test=50).remove('continue_train'))
+    command = "python test.py " + str(experiments[args.experiment_id].set(epoch=args.epoch, num_test=args.num_test).remove('continue_train'))
     print(command)
     os.system(command)
+elif args.subcommand == "eval":
+    print("Calculating metrics...")
+    import eval_simple
+    eval_simple.eval(experiments[args.experiment_id].kvs['name'], args)
 elif args.subcommand == "list":
     for k, v in experiments.items():
         print(f"{k}: {v.kvs['name']}")
+else:
+    print("Please provide a command")
+    parser.print_help()
