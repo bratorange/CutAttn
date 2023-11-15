@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 import argparse
 import os
 
@@ -82,6 +83,15 @@ experiments = {
         netD="basic",
         ada_norm_layers="12,13,14",
     ),
+    16: Options(
+        name="resnet_atn_16_from_02_multiple_atn_spectral_norm",
+        netG="resnet_atn",
+        netD="basic_spectral_norm",
+        ada_norm_layers="12,13",
+        continue_train="",
+        pretrained_name="baseline_14_start_spectral_norm",
+        epoch=2,
+    ),
 }
 
 experiments = {k: opt.set(dataroot="dataset") for k, opt in experiments.items()}
@@ -104,17 +114,21 @@ parser_eval.add_argument('experiment_id', type=int)
 parser_eval.add_argument('epoch', default='latest')
 parser_eval.add_argument('--batch_size', type=int, default=4)
 
+parser.add_argument("--dry", action='store_true')
+
 args = parser.parse_args()
 for k, v in sorted(vars(args).items()):
     print(f"{k}: {v}")
 if args.subcommand == "train":
     command = "python train.py " + str(experiments[args.experiment_id].set(n_epochs=15, n_epochs_decay=0))
     print(command)
-    os.system(command)
+    if not args.dry:
+        os.system(command)
 elif args.subcommand == "test":
     command = "python test.py " + str(experiments[args.experiment_id].set(epoch=args.epoch, num_test=args.num_test).remove('continue_train'))
     print(command)
-    os.system(command)
+    if not args.dry:
+        os.system(command)
 elif args.subcommand == "eval":
     print("Calculating metrics...")
     import eval_simple

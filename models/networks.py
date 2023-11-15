@@ -1058,8 +1058,8 @@ class AdaNormResnet(ResnetGenerator):
         self.adain = adain
         self.ada_norm_layers = ada_norm_layers
         if not self.adain:
-            self.atn_blocks = {layer: init_net(AdaAttN(in_planes=256), opt.init_type, opt.init_gain, opt.gpu_ids)
-                               for layer in self.ada_norm_layers}
+            self.atn_blocks = nn.ModuleDict({str(layer): init_net(AdaAttN(in_planes=256), opt.init_type, opt.init_gain, opt.gpu_ids)
+                               for layer in self.ada_norm_layers})
 
     def forward(self, input, style, layers=[], encode_only=False):
         if -1 in layers:
@@ -1083,7 +1083,7 @@ class AdaNormResnet(ResnetGenerator):
                     feat = torch.cat(feat_list, dim=0)
                 else:
                     feat_list = [
-                        self.atn_blocks[layer_id](sample.unsqueeze(dim=0), current_style_feat, sample.unsqueeze(dim=0), current_style_feat)
+                        self.atn_blocks[str(layer_id)](sample.unsqueeze(dim=0), current_style_feat, sample.unsqueeze(dim=0), current_style_feat)
                         for sample in feat]
                     feat = torch.cat(feat_list, dim=0)
             feat = layer(feat)
