@@ -2,6 +2,9 @@
 import argparse
 import os
 
+from evaluation import eval_simple
+from evaluation.eval_simple import eval_all
+from evaluation.inference import test_all, test
 from experiments.tmux_launcher import Options
 
 experiments = {
@@ -92,20 +95,72 @@ experiments = {
         pretrained_name="baseline_14_start_spectral_norm",
         epoch=2,
     ),
+    17: Options(
+        name="resnet_atn_17_start_spectral_norm_low_lr",
+        netG="resnet_atn",
+        netD="basic_spectral_norm",
+        lr=0.0001,
+    ),
+    18: Options(
+        name="baseline_18_start_spectral_norm_fast_cut",
+        netG="resnet_9blocks",
+        netD="basic_spectral_norm",
+        CUT="FastCUT",
+    ),
+    19: Options(
+        name="resnet_atn_19_start_spectral_norm_low_lr_multiple_atn",
+        netG="resnet_atn",
+        netD="basic_spectral_norm",
+        lr=0.00002,
+        ada_norm_layers="12,13",
+    ),
+    20: Options(
+        name="baseline_20_start_spectral_norm_fast_cut_less_nce",
+        netG="resnet_9blocks",
+        netD="basic_spectral_norm",
+        CUT="FastCUT",
+        lambda_NCE=1,
+    ),
+    21: Options(
+        name="baseline_21_high_GAN",
+        netG="resnet_9blocks",
+        netD="basic_spectral_norm",
+        lambda_NCE=.1,
+    ),
+    22: Options(
+        name="pretrain_22",
+        netG="resnet_9blocks",
+        netD="basic_spectral_norm",
+        lambda_NCE=0.00001,
+        dataset_mode="pretrain",
+        dataroot="imagenet",
+    ),
+    23: Options(
+        name="resnet_atn_23_from_imagenet_multiple_atn_spectral_norm",
+        netG="resnet_atn",
+        netD="basic_spectral_norm",
+        ada_norm_layers="12,13",
+        continue_train="",
+        pretrained_name="pretrain_22",
+        epoch=15,
+        lr=0.00002
+    ),
 }
 
-experiments = {k: opt.set(dataroot="dataset") for k, opt in experiments.items()}
+experiments = {k: opt if "dataroot" in opt.kvs else opt.set(dataroot="dataset") for k, opt in experiments.items()}
 
 parser = argparse.ArgumentParser()
 subparsers = parser.add_subparsers(dest='subcommand')
 
 parser_train = subparsers.add_parser('train')
 parser_train.add_argument('experiment_id', type=int)
+parser_train.add_argument("--dry", action='store_true')
 
 parser_test = subparsers.add_parser('test')
 parser_test.add_argument('experiment_id', type=int)
 parser_test.add_argument('epoch', default='latest')
 parser_test.add_argument("--num_test", type=int, default=50)
+parser_test.add_argument("--dry", action='store_true')
 
 parser_list = subparsers.add_parser('list')
 
@@ -113,29 +168,40 @@ parser_eval = subparsers.add_parser('eval')
 parser_eval.add_argument('experiment_id', type=int)
 parser_eval.add_argument('epoch', default='latest')
 parser_eval.add_argument('--batch_size', type=int, default=4)
+parser_eval.add_argument("--dry", action='store_true')
 
-parser.add_argument("--dry", action='store_true')
+parser_eval_all = subparsers.add_parser('eval_all')
+parser_eval_all.add_argument('experiment_id', type=int)
+parser_eval_all.add_argument('--batch_size', type=int, default=4)
+parser_eval_all.add_argument("--dry", action='store_true')
+
+parser_test_all = subparsers.add_parser('test_all')
+parser_test_all.add_argument('experiment_id', type=int)
+parser_test_all.add_argument("--num_test", type=int, default=50)
+parser_test_all.add_argument("--dry", action='store_true')
 
 args = parser.parse_args()
 for k, v in sorted(vars(args).items()):
     print(f"{k}: {v}")
+
 if args.subcommand == "train":
-    command = "python train.py " + str(experiments[args.experiment_id].set(n_epochs=15, n_epochs_decay=0))
+    command = "python train.py " + str(experiments[args.experiment_id]
+                                       .set(n_epochs=15, n_epochs_decay=0, save_epoch_freq=1, update_html_freq=10))
     print(command)
     if not args.dry:
         os.system(command)
 elif args.subcommand == "test":
-    command = "python test.py " + str(experiments[args.experiment_id].set(epoch=args.epoch, num_test=args.num_test).remove('continue_train'))
-    print(command)
-    if not args.dry:
-        os.system(command)
+    test(experiments, args)
 elif args.subcommand == "eval":
     print("Calculating metrics...")
-    import eval_simple
     eval_simple.eval(experiments[args.experiment_id].kvs['name'], args)
+elif args.subcommand == "eval_all":
+    eval_all(experiments, args)
 elif args.subcommand == "list":
     for k, v in experiments.items():
         print(f"{k}: {v.kvs['name']}")
+elif args.subcommand == "test_all":
+    test_all(experiments, args)
 else:
     print("Please provide a command")
     parser.print_help()
