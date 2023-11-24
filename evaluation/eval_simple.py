@@ -28,7 +28,7 @@ def eval(name, args, epoch=None):
     ])
 
     # Paths to your directories
-    prefix = Path('../results') / name / f'test_{epoch}' / 'images'
+    prefix = Path('results') / name / f'test_{epoch}' / 'images'
     fake_images_path = prefix / 'fake_B'
     real_images_path = prefix / 'real_B'
 
@@ -91,7 +91,7 @@ def eval_all(experiments, args):
     scores = [result["scores"] for result in scores]
     scores = np.array(scores)
     scores = np.transpose(scores)
-    np.savez(visualize.get_eval_file(experiment_name), metric_names=metric_names, scores=scores)
+    np.savez(visualize.get_eval_file(experiment_name), metric_names=metric_names, scores=scores, epochs=epochs)
 
     print(scores)
 
