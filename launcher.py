@@ -7,6 +7,7 @@ from evaluation import eval_simple
 from evaluation.eval_simple import eval_all
 from evaluation.inference import test_all, test
 from experiments.tmux_launcher import Options
+from subcommand import subcommand_types
 
 experiments = {
     1: Options(
@@ -222,6 +223,10 @@ parser_test_all.add_argument('experiment_id', type=int)
 parser_test_all.add_argument("--num_test", type=int, default=50)
 parser_test_all.add_argument("--dry", action='store_true')
 
+for name, cls in subcommand_types.items():
+    parser_sc = subparsers.add_parser(name)
+    cls.populate_subparser(parser_sc)
+
 args = parser.parse_args()
 for k, v in sorted(vars(args).items()):
     print(f"{k}: {v}")
@@ -247,6 +252,8 @@ elif args.subcommand == "list":
         print(f"{k}: {v.kvs['name']}")
 elif args.subcommand == "test_all":
     test_all(experiments, args)
+elif args.subcommand in subcommand_types:
+    subcommand_types[args.subcommand].invoke(experiments, args)
 else:
     print("Please provide a command")
     parser.print_help()

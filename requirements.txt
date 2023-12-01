@@ -5,4 +5,7 @@ visdom>=0.1.8.8
 packaging
 GPUtil>=1.4.0
 piq
+segmentation-models-pytorch
+pytorch-lightning==1.5.4
 matplotlib
+scikit-learn

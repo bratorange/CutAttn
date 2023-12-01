@@ -1,8 +1,8 @@
 from pathlib import Path
 
 import numpy as np
-from evaluation import get_epochs, visualize
-
+from evaluation import get_epochs
+from subcommand import visualize
 
 
 def eval(name, args, epoch=None):
