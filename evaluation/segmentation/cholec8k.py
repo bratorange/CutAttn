@@ -1,3 +1,5 @@
+from pathlib import Path
+
 import torch
 from collections import namedtuple
 import os
@@ -69,3 +71,6 @@ def read_dataset(main_path: str) -> list:
     img_files.sort()
     mask_files.sort()
     return img_files, mask_files
+
+dataset_path = Path("../../cholec8K/video01/video01_00080")
+print(read_dataset(dataset_path))
