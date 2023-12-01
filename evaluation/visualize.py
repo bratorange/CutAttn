@@ -3,7 +3,7 @@ from pathlib import Path
 import numpy as np
 from matplotlib import pyplot as plt
 
-name = "resnet_atn_23_from_imagenet_multiple_atn_spectral_norm"
+name = "resnet_atn_17_start_spectral_norm_low_lr"
 
 def get_eval_file(name):
     return Path("results") / name / "scores.npz"

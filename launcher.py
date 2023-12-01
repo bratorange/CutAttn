@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 import argparse
 import os
+from time import sleep
 
 from evaluation import eval_simple
 from evaluation.eval_simple import eval_all
@@ -8,6 +9,11 @@ from evaluation.inference import test_all, test
 from experiments.tmux_launcher import Options
 
 experiments = {
+    1: Options(
+        name="baseline_01",
+        netG="resnet_9blocks",
+        netD="basic_spectral_norm",
+    ),
     2: Options(
         name="resnet_atn_02_continue_from_10",
         netG="resnet_atn",
@@ -94,6 +100,7 @@ experiments = {
         continue_train="",
         pretrained_name="baseline_14_start_spectral_norm",
         epoch=2,
+        lr=0.00002,
     ),
     17: Options(
         name="resnet_atn_17_start_spectral_norm_low_lr",
@@ -146,6 +153,41 @@ experiments = {
         lr=0.00002
     ),
 }
+experiments.update({
+    30+i: Options(
+        name=f"resnet_adain_{30+i}_from_{x}",
+        netG="resnet_adain",
+        netD="basic",
+        ada_norm_layers="12",
+        pretrained_name="baseline_01",
+        epoch=x,
+    ).set(**({} if x == 0 else {"continue_train": ""}))
+    for i, x in enumerate([0, 1, 2, 4, 8])
+})
+
+experiments.update({
+    40+i: Options(
+        name=f"resnet_atn_{40+i}_from_{x}_low_lr",
+        netG="resnet_atn",
+        netD="basic_spectral_norm",
+        ada_norm_layers="12,13",
+        pretrained_name="baseline_01",
+        lr=0.00002,
+        epoch=x,
+    ).set(**({} if x == 0 else {"continue_train": ""}))
+    for i, x in enumerate([0, 1, 2, 4, 8])
+})
+
+experiments.update({
+    50+i: Options(
+        name=f"resnet_atn_{50+i}_from_start_low_lr_multiple_{len(x.split(','))}",
+        netG="resnet_atn",
+        netD="basic_spectral_norm",
+        ada_norm_layers=x,
+        lr=0.00002,
+    )
+    for i, x in enumerate(["12", "12,13", "12,13,14", "12,13,14,15"])
+})
 
 experiments = {k: opt if "dataroot" in opt.kvs else opt.set(dataroot="dataset") for k, opt in experiments.items()}
 
@@ -153,7 +195,7 @@ parser = argparse.ArgumentParser()
 subparsers = parser.add_subparsers(dest='subcommand')
 
 parser_train = subparsers.add_parser('train')
-parser_train.add_argument('experiment_id', type=int)
+parser_train.add_argument('experiment_id', type=str)
 parser_train.add_argument("--dry", action='store_true')
 
 parser_test = subparsers.add_parser('test')
@@ -185,11 +227,14 @@ for k, v in sorted(vars(args).items()):
     print(f"{k}: {v}")
 
 if args.subcommand == "train":
-    command = "python train.py " + str(experiments[args.experiment_id]
-                                       .set(n_epochs=15, n_epochs_decay=0, save_epoch_freq=1, update_html_freq=10))
-    print(command)
-    if not args.dry:
-        os.system(command)
+    experiment_ids = [int(i) for i in args.experiment_id.split(',')]
+    for experiment_id in experiment_ids:
+        command = "python train.py " + str(experiments[experiment_id]
+                                           .set(n_epochs=30, n_epochs_decay=0, save_epoch_freq=1, update_html_freq=10))
+        print(command)
+        if not args.dry:
+            os.system(command)
+            sleep(10)
 elif args.subcommand == "test":
     test(experiments, args)
 elif args.subcommand == "eval":
