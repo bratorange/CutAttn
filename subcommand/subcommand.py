@@ -6,15 +6,24 @@ from typing import Type
 class Subcommand:
     @staticmethod
     def populate_subparser(sc_parser: ArgumentParser):
+        """
+        add parameters for the launcher
+        @param sc_parser:
+        the ArgumentParser passed by the launcher to populate
+        """
         pass
 
     @staticmethod
     def invoke(experiments, args):
+        """
+        Invokes the code of this subcommand
+        @param experiments:
+        The experiments provided by the launcher
+        @param args:
+        subcommand specific parameters
+        """
         pass
 
-    @staticmethod
-    def get_name() -> str:
-        pass
 
 
 subcommand_types = {}

@@ -9,6 +9,7 @@ from evaluation.inference import test_all, test
 from experiments.tmux_launcher import Options
 from subcommand import subcommand_types
 
+# set of experiment parameters
 experiments = {
     1: Options(
         name="baseline_01",
@@ -190,6 +191,7 @@ experiments.update({
     for i, x in enumerate(["12", "12,13", "12,13,14", "12,13,14,15"])
 })
 
+# general parameters for every experiment
 experiments = {k: opt if "dataroot" in opt.kvs else opt.set(dataroot="dataset") for k, opt in experiments.items()}
 
 parser = argparse.ArgumentParser()
@@ -223,11 +225,14 @@ parser_test_all.add_argument('experiment_id', type=int)
 parser_test_all.add_argument("--num_test", type=int, default=50)
 parser_test_all.add_argument("--dry", action='store_true')
 
+# add all the subcommand parameters
 for name, cls in subcommand_types.items():
     parser_sc = subparsers.add_parser(name)
     cls.populate_subparser(parser_sc)
 
 args = parser.parse_args()
+
+# print out all parameters to the user for reassurance
 for k, v in sorted(vars(args).items()):
     print(f"{k}: {v}")
 

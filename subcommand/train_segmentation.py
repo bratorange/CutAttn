@@ -21,7 +21,7 @@ class TrainSeg(Subcommand):
         name = root.name
         mask_value = 255
         add_circle = True
-        resize = False
+        resize = True
         ##################################
 
         # import here to not slow down the launcher
@@ -32,7 +32,7 @@ class TrainSeg(Subcommand):
         from sklearn.model_selection import KFold
         from torch.utils.data import DataLoader
         from evaluation.segmentation.model import Model
-        from evaluation.segmentation.split_dataset import SimpleSplitDataset
+        from evaluation.segmentation.split_dataset import SplitDataset
 
         # load image names
         split_filepath = root / split_filename
@@ -41,7 +41,6 @@ class TrainSeg(Subcommand):
             filenames = [x.split(" ")[0] for x in split_data]
 
         # do the kfold splits
-        test = list(KFold(n_splits=n_splits, shuffle=True, random_state=False).split(filenames))
         split_filenames = [
             [
                 [split_data[y] for y in train],
@@ -50,12 +49,13 @@ class TrainSeg(Subcommand):
             for train, valid in KFold(n_splits=n_splits, shuffle=True, random_state=False).split(filenames)]
 
         datasets = [(
-            DataLoader(SimpleSplitDataset(root, train, mask_value=mask_value, add_circle=add_circle, resize=resize), batch_size=16, shuffle=True, num_workers=os.cpu_count()),
-            DataLoader(SimpleSplitDataset(root, valid, mask_value=mask_value, add_circle=add_circle, resize=resize), batch_size=16, shuffle=True, num_workers=os.cpu_count()),
+            DataLoader(SplitDataset(root, train, add_circle=add_circle, resize=resize), batch_size=16, shuffle=True, num_workers=os.cpu_count()),
+            DataLoader(SplitDataset(root, valid, add_circle=add_circle, resize=resize), batch_size=16, shuffle=True, num_workers=os.cpu_count()),
         )
             for train, valid in split_filenames
         ]
 
+        # train one model for every split
         for k, (train_dataloader, valid_dataloader) in enumerate(datasets):
             trainer = pl.Trainer(
                 gpus=1,

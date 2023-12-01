@@ -25,9 +25,17 @@ def add_circle_mask(img):
     img = circle_mask( img, maskOx, maskOy, maskRadius )
     return img
 
-def constant_circle_mask(img):
-    img_w, img_h = img.width, img.height
+def constant_circle_mask(img, raw_w, raw_h):
     mask_x = 0
     mask_y = 0
-    radius = int(img_w*.45)
-    return circle_mask(img, mask_x, mask_y, radius)
+    radius = int(raw_w*.45)
+    mask = Image.new('L', (raw_w, raw_h), 255)
+    draw = ImageDraw.Draw(mask)
+    x0 = raw_w * 0.5 - radius + mask_x
+    x1 = raw_w * 0.5 + radius + mask_x
+    y0 = raw_h * 0.5 - radius + mask_y
+    y1 = raw_h * 0.5 + radius + mask_y
+    draw.ellipse([x0, y0, x1, y1], fill=0)
+    mask = mask.resize(img.size)
+    img.paste(0, mask=mask)
+    return img

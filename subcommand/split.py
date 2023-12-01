@@ -6,7 +6,7 @@ from subcommand import Subcommand, register_subcommand
 
 
 @register_subcommand
-class SplitDataset(Subcommand):
+class SplitData(Subcommand):
     @staticmethod
     def populate_subparser(sc_parser: ArgumentParser):
         sc_parser.add_argument("dataset_root", type=str)
