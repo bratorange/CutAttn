@@ -2,8 +2,8 @@ import torch
 from PIL import Image
 from torchvision import transforms
 
-from data.transform import constant_circle_mask
-from evaluation.segmentation.cholec8k import label_to_channel
+from evaluation.data import constant_circle_mask
+from evaluation.cholec8k import label_to_channel
 
 
 class SplitDataset(torch.utils.data.Dataset):
@@ -36,6 +36,7 @@ class SplitDataset(torch.utils.data.Dataset):
                 mask = constant_circle_mask(mask, mask.width, mask.height)
         mask = transform(mask)
         mask = label_to_channel(mask)
+        mask = mask.unsqueeze(0)
 
         image = Image.open(image_path).convert('RGB')
         if self.resize:

@@ -7,8 +7,9 @@ import torch
 from matplotlib import pyplot as plt
 from torch.utils.data import DataLoader
 
-from model import Model
-from split_dataset import SimpleSplitDataset
+from evaluation.model import Model
+
+from evaluation.split_dataset import SplitDataset
 
 root = Path("./generated/small_epoch")
 use_split = False
@@ -27,7 +28,7 @@ if use_split:
 else:
     filenames = [x.stem for x in (root / "images").iterdir()]
 
-test_dataset =  SimpleSplitDataset(root, filenames, mask_value=mask_value, add_circle=add_circle, resize=resize)
+test_dataset =  SplitDataset(root, filenames, mask_value=mask_value, add_circle=add_circle, resize=resize)
 test_dataloader = DataLoader(test_dataset, batch_size=16, shuffle=False, num_workers=os.cpu_count())
 
 trainer = pl.Trainer(

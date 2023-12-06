@@ -3,11 +3,8 @@ import argparse
 import os
 from time import sleep
 
-from evaluation import eval_simple
-from evaluation.eval_simple import eval_all
-from evaluation.inference import test_all, test
 from experiments.tmux_launcher import Options
-from subcommand import subcommand_types
+from subcommand.subcommand import subcommand_types
 
 # set of experiment parameters
 experiments = {
@@ -201,29 +198,8 @@ parser_train = subparsers.add_parser('train')
 parser_train.add_argument('experiment_id', type=str)
 parser_train.add_argument("--dry", action='store_true')
 
-parser_test = subparsers.add_parser('test')
-parser_test.add_argument('experiment_id', type=int)
-parser_test.add_argument('epoch', default='latest')
-parser_test.add_argument("--num_test", type=int, default=50)
-parser_test.add_argument("--dry", action='store_true')
-
 parser_list = subparsers.add_parser('list')
 
-parser_eval = subparsers.add_parser('eval')
-parser_eval.add_argument('experiment_id', type=int)
-parser_eval.add_argument('epoch', default='latest')
-parser_eval.add_argument('--batch_size', type=int, default=4)
-parser_eval.add_argument("--dry", action='store_true')
-
-parser_eval_all = subparsers.add_parser('eval_all')
-parser_eval_all.add_argument('experiment_id', type=int)
-parser_eval_all.add_argument('--batch_size', type=int, default=4)
-parser_eval_all.add_argument("--dry", action='store_true')
-
-parser_test_all = subparsers.add_parser('test_all')
-parser_test_all.add_argument('experiment_id', type=int)
-parser_test_all.add_argument("--num_test", type=int, default=50)
-parser_test_all.add_argument("--dry", action='store_true')
 
 # add all the subcommand parameters
 for name, cls in subcommand_types.items():
@@ -245,18 +221,9 @@ if args.subcommand == "train":
         if not args.dry:
             os.system(command)
             sleep(10)
-elif args.subcommand == "test":
-    test(experiments, args)
-elif args.subcommand == "eval":
-    print("Calculating metrics...")
-    eval_simple.eval(experiments[args.experiment_id].kvs['name'], args)
-elif args.subcommand == "eval_all":
-    eval_all(experiments, args)
 elif args.subcommand == "list":
     for k, v in experiments.items():
         print(f"{k}: {v.kvs['name']}")
-elif args.subcommand == "test_all":
-    test_all(experiments, args)
 elif args.subcommand in subcommand_types:
     subcommand_types[args.subcommand].invoke(experiments, args)
 else:

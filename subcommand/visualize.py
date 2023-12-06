@@ -1,14 +1,14 @@
 from argparse import ArgumentParser
-from pathlib import Path
 
-from subcommand import Subcommand, register_subcommand
+from evaluation import get_epochs, get_eval_file
+from .subcommand import Subcommand, register_subcommand
 
 
 @register_subcommand
 class VisScores(Subcommand):
     @staticmethod
     def populate_subparser(sc_parser: ArgumentParser):
-        sc_parser.add_argument("name", type=str)
+        sc_parser.add_argument("experiment_id", type=int)
 
     @staticmethod
     def invoke(experiments, args):
@@ -17,16 +17,15 @@ class VisScores(Subcommand):
         import numpy as np
         from matplotlib import pyplot as plt
 
-        name = args.name
+        experiment, epochs, name = get_epochs(experiments, args)
 
-        loaded_data = np.load(Path("results") / name / "scores.npz")
+        loaded_data = np.load(get_eval_file(name))
         metric_names = loaded_data['metric_names']
         scores = loaded_data['scores']
         epochs = loaded_data['epochs']
 
         markers = ['o', 'v', 's', '*']
         colors = ['red', 'blue', 'yellow', 'green']
-
 
         for i, (score_name, score, marker, color) in enumerate(zip(metric_names, scores, markers, colors)):
             if i == 0:

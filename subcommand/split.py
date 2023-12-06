@@ -2,7 +2,7 @@ import random
 from argparse import ArgumentParser
 from pathlib import Path
 
-from subcommand import Subcommand, register_subcommand
+from .subcommand import Subcommand, register_subcommand
 
 
 @register_subcommand
@@ -21,7 +21,7 @@ class SplitData(Subcommand):
 
         images_dir = root / "images"
 
-        from evaluation.segmentation.cholec8k import read_dataset
+        from evaluation.cholec8k import read_dataset
         images, masks = read_dataset(str(images_dir))
 
         random.shuffle(images)

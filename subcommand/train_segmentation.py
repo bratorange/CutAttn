@@ -1,7 +1,7 @@
 from argparse import ArgumentParser
 from pathlib import Path
 
-from subcommand import Subcommand, register_subcommand
+from .subcommand import Subcommand, register_subcommand
 
 
 @register_subcommand
@@ -31,8 +31,8 @@ class TrainSeg(Subcommand):
         from pytorch_lightning.callbacks import ModelCheckpoint
         from sklearn.model_selection import KFold
         from torch.utils.data import DataLoader
-        from evaluation.segmentation.model import Model
-        from evaluation.segmentation.split_dataset import SplitDataset
+        from evaluation.model import Model
+        from evaluation.split_dataset import SplitDataset
 
         # load image names
         split_filepath = root / split_filename
@@ -57,6 +57,7 @@ class TrainSeg(Subcommand):
 
         # train one model for every split
         for k, (train_dataloader, valid_dataloader) in enumerate(datasets):
+            print(f"Training split {k+1} of {len(datasets)}")
             trainer = pl.Trainer(
                 gpus=1,
                 max_epochs=100,

@@ -35,3 +35,4 @@ def register_subcommand(sc: Type[Subcommand]):
     # convert class names from camel case to snake case
     name = re.sub(pattern,'_', sc.__name__).lower()
     subcommand_types[name] = sc
+    return sc
