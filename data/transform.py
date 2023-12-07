@@ -2,7 +2,7 @@ from PIL import Image, ImageDraw
 import random
 import math
 
-def circle_mask( img, ox, oy, radius ):
+def circle_mask( img, ox, oy, radius, fill=0 ):
     mask = Image.new('L', img.size, 255)
     draw = ImageDraw.Draw(mask)
     x0 = img.size[0]*0.5 - radius + ox
@@ -10,7 +10,7 @@ def circle_mask( img, ox, oy, radius ):
     y0 = img.size[1]*0.5 - radius + oy
     y1 = img.size[1]*0.5 + radius + oy
     draw.ellipse([x0,y0,x1,y1], fill=0)
-    img.paste( (0,0,0), mask=mask )
+    img.paste((fill,)*3, mask=mask )
     return img
 
 def add_circle_mask(img):
@@ -25,7 +25,7 @@ def add_circle_mask(img):
     img = circle_mask( img, maskOx, maskOy, maskRadius )
     return img
 
-def constant_circle_mask(img, raw_w, raw_h):
+def constant_circle_mask(img, raw_w, raw_h, fill=0):
     mask_x = 0
     mask_y = 0
     radius = int(raw_w*.45)
@@ -37,5 +37,5 @@ def constant_circle_mask(img, raw_w, raw_h):
     y1 = raw_h * 0.5 + radius + mask_y
     draw.ellipse([x0, y0, x1, y1], fill=0)
     mask = mask.resize(img.size)
-    img.paste(0, mask=mask)
+    img.paste((fill,)*3, mask=mask)
     return img

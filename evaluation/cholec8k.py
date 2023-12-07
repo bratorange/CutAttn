@@ -7,6 +7,8 @@ from typing import Tuple, List, Dict, Optional, Union
 
 color_code = namedtuple('colorcode', ['name', 'color'])
 
+n_classes = 7
+
 label_codes = [color_code(name='bg', color=(127,127,127)),
                color_code(name='abwall', color=(210,140,140)),
                color_code(name='liver', color=(255,114,114)),
@@ -30,8 +32,7 @@ def label_to_channel(col_mask, labelColors=label_codes):
     Return:
         lbl: torch tensor of labels with values btw 0 and 6 
     """
-    lbl = torch.zeros(col_mask.shape[1:], dtype=torch.int64)
-    lbl.fill_(255)
+    lbl = torch.zeros((1,) + col_mask.shape[1:], dtype=torch.long)
     for i in range( 0, len(labelColors) ):
         lc = labelColors[i]
         if i>=5:
@@ -39,9 +40,8 @@ def label_to_channel(col_mask, labelColors=label_codes):
         mask = (col_mask[0,:,:] == lc.color[0])*(col_mask[1,:,:] == lc.color[1])*(col_mask[2,:,:] == lc.color[2])
         #if lc.name == "hook":
         #    lbl[mask] = 4
-        lbl[mask] = i
-    
-    lbl[lbl==255] = 0
+        lbl[0][mask] = i
+
     return lbl
 
 def read_dataset(main_path: str) -> list:

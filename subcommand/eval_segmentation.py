@@ -3,6 +3,8 @@ from pathlib import Path
 from pprint import pprint
 import os
 
+import numpy as np
+
 from .subcommand import Subcommand, register_subcommand
 
 
@@ -46,7 +48,7 @@ class EvalSeg(Subcommand):
             max_epochs=1,
         )
 
-        model = Model.load_from_checkpoint(Path("logs/cholec8K/k=0/checkpoints/epoch=0-valid_per_image_iou=2.1271634101867676-i=0.ckpt"))
+        model = Model.load_from_checkpoint(Path("logs/cholec8K/k=0/checkpoints/epoch=21-valid_per_image_iou=0.8080916404724121-i=0.ckpt"))
 
         # run test dataset
         test_metrics = trainer.test(model, dataloaders=test_dataloader, verbose=False)
@@ -68,12 +70,14 @@ class EvalSeg(Subcommand):
             plt.axis("off")
 
             plt.subplot(1, 3, 2)
-            plt.imshow(gt_mask.numpy().squeeze()) # just squeeze classes dim, because we have only one class
+            plt.imshow(gt_mask.numpy().squeeze())
             plt.title("Ground truth")
             plt.axis("off")
 
+            index_pred_mask = torch.argmax(pr_mask, dim=0, keepdim=False)
+
             plt.subplot(1, 3, 3)
-            plt.imshow(pr_mask.numpy().squeeze()) # just squeeze classes dim, because we have only one class
+            plt.imshow(index_pred_mask.numpy())
             plt.title("Prediction")
             plt.axis("off")
 

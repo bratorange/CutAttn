@@ -59,7 +59,7 @@ class TrainSeg(Subcommand):
             print(f"\nTraining split {k+1} of {len(datasets)}")
             trainer = pl.Trainer(
                 gpus=1,
-                max_epochs=1,
+                max_epochs=100,
                 enable_checkpointing=True,
                 callbacks=[ModelCheckpoint(
                     filename='{epoch}-{valid_per_image_iou}-{i}',

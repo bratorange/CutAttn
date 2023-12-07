@@ -2,13 +2,15 @@ import torch
 import pytorch_lightning as pl
 import segmentation_models_pytorch as smp
 
+from evaluation.cholec8k import n_classes
+
 
 class Model(pl.LightningModule):
 
     def __init__(self):
         super().__init__()
         self.model = smp.create_model(
-            "DeepLabV3", encoder_name = "resnet34", in_channels=3, classes=1
+            "DeepLabV3", encoder_name = "resnet34", in_channels=3, classes=n_classes
         )
 
         # preprocessing parameteres for image
@@ -17,7 +19,7 @@ class Model(pl.LightningModule):
         self.register_buffer("mean", torch.tensor(params["mean"]).view(1, 3, 1, 1))
 
         # for image segmentation dice loss could be the best first choice
-        self.loss_fn = smp.losses.DiceLoss(smp.losses.BINARY_MODE, from_logits=True)
+        self.loss_fn = smp.losses.DiceLoss(smp.losses.MULTICLASS_MODE, from_logits=True)
 
     def forward(self, image):
         # normalize image here
@@ -45,7 +47,7 @@ class Model(pl.LightningModule):
         assert mask.ndim == 4
 
         # Check that mask values in between 0 and 1, NOT 0 and 255 for binary segmentation
-        assert mask.max() <= 255
+        assert mask.max() <= n_classes
 
         logits_mask = self.forward(image)
 
@@ -58,13 +60,15 @@ class Model(pl.LightningModule):
         prob_mask = logits_mask.sigmoid()
         pred_mask = (prob_mask > 0.5).float()
 
+        index_pred_mask = torch.argmax(pred_mask.long(), dim=1, keepdim=True)
+
         # We will compute IoU metric by two ways
         #   1. dataset-wise
         #   2. image-wise
         # but for now we just compute true positive, false positive, false negative and
         # true negative 'pixels' for each image and class
         # these values will be aggregated in the end of an epoch
-        tp, fp, fn, tn = smp.metrics.get_stats(pred_mask.long(), mask.long(), mode="binary")
+        tp, fp, fn, tn = smp.metrics.get_stats(index_pred_mask.long(), mask.long(), mode="multiclass", num_classes=n_classes)
 
         return {
             "loss": loss,

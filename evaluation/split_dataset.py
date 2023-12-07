@@ -32,12 +32,11 @@ class SplitDataset(torch.utils.data.Dataset):
             mask = mask.resize((256, 256))
         if self.add_circle:
             if self.resize:
-                mask = constant_circle_mask(mask, raw_w, raw_h)
+                mask = constant_circle_mask(mask, raw_w, raw_h, fill=127)
             else:
-                mask = constant_circle_mask(mask, mask.width, mask.height)
+                mask = constant_circle_mask(mask, mask.width, mask.height, fill=127)
         mask = np.transpose(np.array(mask), (2, 0, 1))
         mask = label_to_channel(mask)
-        mask = mask.unsqueeze(0)
 
         image = Image.open(image_path).convert('RGB')
         if self.resize:
