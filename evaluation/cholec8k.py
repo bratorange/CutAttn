@@ -30,7 +30,7 @@ def label_to_channel(col_mask, labelColors=label_codes):
     Return:
         lbl: torch tensor of labels with values btw 0 and 6 
     """
-    lbl = torch.LongTensor(col_mask.shape[1:])
+    lbl = torch.zeros(col_mask.shape[1:], dtype=torch.int64)
     lbl.fill_(255)
     for i in range( 0, len(labelColors) ):
         lc = labelColors[i]

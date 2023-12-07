@@ -1,8 +1,9 @@
+import numpy as np
 import torch
 from PIL import Image
 from torchvision import transforms
 
-from evaluation.data import constant_circle_mask
+from data.transform import constant_circle_mask
 from evaluation.cholec8k import label_to_channel
 
 
@@ -34,7 +35,7 @@ class SplitDataset(torch.utils.data.Dataset):
                 mask = constant_circle_mask(mask, raw_w, raw_h)
             else:
                 mask = constant_circle_mask(mask, mask.width, mask.height)
-        mask = transform(mask)
+        mask = np.transpose(np.array(mask), (2, 0, 1))
         mask = label_to_channel(mask)
         mask = mask.unsqueeze(0)
 
@@ -49,5 +50,5 @@ class SplitDataset(torch.utils.data.Dataset):
         image = image.convert("RGB")
         image = transform(image)
 
-        sample = dict(image=image, mask=mask)
+        sample = dict(image=image, mask=mask, filename=filename)
         return sample

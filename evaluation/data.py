@@ -2,7 +2,7 @@ import os
 
 from torch.utils.data import DataLoader
 
-from trainval_dataset import SimpleTrainValDataset
+from evaluation.trainval_dataset import SimpleTrainValDataset
 
 
 def get_dataloaders():

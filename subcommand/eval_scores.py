@@ -8,7 +8,7 @@ from .subcommand import Subcommand, register_subcommand
 
 
 @register_subcommand
-class Scores(Subcommand):
+class Score(Subcommand):
     @staticmethod
     def populate_subparser(sc_parser: ArgumentParser):
         sc_parser.add_argument('experiment_id', type=int)
@@ -101,8 +101,13 @@ class ScoresAll(Subcommand):
 
     @staticmethod
     def invoke(experiments, args):
-        experiment, epochs, experiment_name = get_epochs(experiments, args)
-        scores = [Scores.invoke(experiment_name, copy.deepcopy(args).set(epoch=epoch)) for epoch in epochs]
+        _, epochs, experiment_name = get_epochs(experiments, args)
+
+        scores = []
+        for epoch in epochs:
+            downstream_args = copy.deepcopy(args)
+            setattr(downstream_args, "epoch", epoch)
+            scores.append(Score.invoke(experiments, downstream_args))
         if args.dry:
             return
 

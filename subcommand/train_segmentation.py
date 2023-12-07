@@ -19,7 +19,6 @@ class TrainSeg(Subcommand):
         root = Path(args.dataset_root)
         n_splits = args.n_splits
         name = root.name
-        mask_value = 255
         add_circle = True
         resize = True
         ##################################
@@ -57,10 +56,10 @@ class TrainSeg(Subcommand):
 
         # train one model for every split
         for k, (train_dataloader, valid_dataloader) in enumerate(datasets):
-            print(f"Training split {k+1} of {len(datasets)}")
+            print(f"\nTraining split {k+1} of {len(datasets)}")
             trainer = pl.Trainer(
                 gpus=1,
-                max_epochs=100,
+                max_epochs=1,
                 enable_checkpointing=True,
                 callbacks=[ModelCheckpoint(
                     filename='{epoch}-{valid_per_image_iou}-{i}',

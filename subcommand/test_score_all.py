@@ -6,7 +6,7 @@ from .subcommand import Subcommand, register_subcommand
 
 
 @register_subcommand
-class TestEvalAll(Subcommand):
+class TestScoreAll(Subcommand):
     @staticmethod
     def populate_subparser(sc_parser: ArgumentParser):
         sc_parser.add_argument('experiment_id', type=str)

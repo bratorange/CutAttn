@@ -4,5 +4,6 @@ from .train_segmentation import *
 from .visualize import *
 from .eval_scores import *
 from .test import *
+from .eval_segmentation import *
 
-from .test_eval_all import *
+from .test_score_all import *

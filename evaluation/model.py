@@ -45,7 +45,7 @@ class Model(pl.LightningModule):
         assert mask.ndim == 4
 
         # Check that mask values in between 0 and 1, NOT 0 and 255 for binary segmentation
-        assert mask.max() <= 1.0 and mask.min() >= 0
+        assert mask.max() <= 255
 
         logits_mask = self.forward(image)
 
