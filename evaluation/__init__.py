@@ -1,12 +1,14 @@
 import re
 from pathlib import Path
 
+from experiments.tmux_launcher import Options
+
 
 def get_eval_file(name):
     return Path("results") / name / "scores.npz"
 
 
-def get_epochs(experiments, args):
+def get_experiment(experiments, args) -> (Options, list, str):
     experiment = experiments[args.experiment_id]
     epochs = [re.sub(r"([0-9]*).*_.*", r"\1", checkpoint.name) for checkpoint in
               (Path("checkpoints") / experiment.kvs["name"]).glob("*net_G.pth")]

@@ -5,6 +5,8 @@ import os
 
 import numpy as np
 
+from evaluation import get_experiment
+from evaluation.dataset_creation import create_dataloader
 from .subcommand import Subcommand, register_subcommand
 
 
@@ -12,43 +14,38 @@ from .subcommand import Subcommand, register_subcommand
 class EvalSeg(Subcommand):
     @staticmethod
     def populate_subparser(sc_parser: ArgumentParser):
-        sc_parser.add_argument("dataset_root", type=str)
+        sc_parser.add_argument("--weights_name", default="default")
+        subparsers = sc_parser.add_subparsers(dest='mode')
+
+        cut_parser = subparsers.add_parser("cut")
+        cut_parser.add_argument('experiment_id', type=int)
+        cut_parser.add_argument('--epoch', default='latest')
+
+        test_parser = subparsers.add_parser("test")
+        test_parser.add_argument("dataset_root", type=str)
 
     @staticmethod
     def invoke(experiments, args):
-        root = Path(args.dataset_root)
-        split_filename = "test.txt"
-        use_split = True
         add_circle = True
         resize = True
+        weight_path = Path("logs/weights/") / (args.weights_name + ".ckpt")
+        use_split = True
+        split_filename = "test.txt"
 
 
         import pytorch_lightning as pl
         import torch
         from matplotlib import pyplot as plt
-        from torch.utils.data import DataLoader
-
         from evaluation.model import Model
 
-        from evaluation.split_dataset import SplitDataset
-
-        if use_split:
-            split_filepath = root / split_filename
-            with open(split_filepath) as f:
-                split_data = f.read().strip("\n").split("\n")
-            filenames = [x.split(" ")[0] for x in split_data]
-        else:
-            filenames = [x.stem for x in (root / "images").iterdir()]
-
-        test_dataset =  SplitDataset(root, filenames, add_circle=add_circle, resize=resize)
-        test_dataloader = DataLoader(test_dataset, batch_size=16, shuffle=False, num_workers=os.cpu_count())
 
         trainer = pl.Trainer(
             gpus=1,
             max_epochs=1,
         )
-
-        model = Model.load_from_checkpoint(Path("logs/cholec8K/k=0/checkpoints/epoch=21-valid_per_image_iou=0.8080916404724121-i=0.ckpt"))
+        test_dataloader = create_dataloader(experiments, args, split_filename, add_circle=add_circle, resize=resize,
+                                            shuffle=False, use_split=use_split)
+        model = Model.load_from_checkpoint(weight_path)
 
         # run test dataset
         test_metrics = trainer.test(model, dataloaders=test_dataloader, verbose=False)

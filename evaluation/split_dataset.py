@@ -8,12 +8,15 @@ from evaluation.cholec8k import label_to_channel
 
 
 class SplitDataset(torch.utils.data.Dataset):
-    def __init__(self, root, filenames, add_circle=False, transform=None, resize=False):
+    def __init__(self, filenames, image_folder, mask_folder, colorcodes, add_circle=False, transform=None, resize=False,):
         self.resize = resize
         self.add_circle = add_circle
         self.transform = transform
-        self.root = root
         self.filenames = filenames
+        self.image_folder = image_folder
+        self.mask_folder = mask_folder
+        self.colorcodes = colorcodes
+        self.fill = self.colorcodes[0].color
 
     def __len__(self):
         return len(self.filenames)
@@ -22,8 +25,8 @@ class SplitDataset(torch.utils.data.Dataset):
 
         filename = self.filenames[idx]
 
-        image_path = filename + '.png'
-        mask_path = filename + '_color_mask.png'
+        image_path = self.image_folder / filename
+        mask_path = self.mask_folder / filename
         transform = transforms.ToTensor()
 
         mask = Image.open(mask_path).convert('RGB')
@@ -32,11 +35,11 @@ class SplitDataset(torch.utils.data.Dataset):
             mask = mask.resize((256, 256))
         if self.add_circle:
             if self.resize:
-                mask = constant_circle_mask(mask, raw_w, raw_h, fill=127)
+                mask = constant_circle_mask(mask, raw_w, raw_h, fill=self.fill)
             else:
-                mask = constant_circle_mask(mask, mask.width, mask.height, fill=127)
+                mask = constant_circle_mask(mask, mask.width, mask.height, fill=self.fill)
         mask = np.transpose(np.array(mask), (2, 0, 1))
-        mask = label_to_channel(mask)
+        mask = label_to_channel(mask, self.colorcodes)
 
         image = Image.open(image_path).convert('RGB')
         if self.resize:

@@ -1,6 +1,6 @@
 from argparse import ArgumentParser
 
-from evaluation import get_epochs, get_eval_file
+from evaluation import get_experiment, get_eval_file
 from .subcommand import Subcommand, register_subcommand
 
 
@@ -17,7 +17,7 @@ class VisScores(Subcommand):
         import numpy as np
         from matplotlib import pyplot as plt
 
-        experiment, epochs, name = get_epochs(experiments, args)
+        experiment, epochs, name = get_experiment(experiments, args)
 
         loaded_data = np.load(get_eval_file(name))
         metric_names = loaded_data['metric_names']

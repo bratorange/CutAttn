@@ -1,4 +1,4 @@
-from PIL import Image, ImageDraw
+from PIL import Image, ImageDraw, ImageColor
 import random
 import math
 
@@ -10,7 +10,7 @@ def circle_mask( img, ox, oy, radius, fill=0 ):
     y0 = img.size[1]*0.5 - radius + oy
     y1 = img.size[1]*0.5 + radius + oy
     draw.ellipse([x0,y0,x1,y1], fill=0)
-    img.paste((fill,)*3, mask=mask )
+    img.paste(convert_to_rgb(fill), mask=mask )
     return img
 
 def add_circle_mask(img):
@@ -37,5 +37,13 @@ def constant_circle_mask(img, raw_w, raw_h, fill=0):
     y1 = raw_h * 0.5 + radius + mask_y
     draw.ellipse([x0, y0, x1, y1], fill=0)
     mask = mask.resize(img.size)
-    img.paste((fill,)*3, mask=mask)
+    img.paste(convert_to_rgb(fill), mask=mask)
     return img
+
+def convert_to_rgb(c):
+    if isinstance(c, int):
+        return (c, c, c)
+    elif isinstance(c, tuple) and len(c) == 3:
+        return c
+    else:
+        raise ValueError("unsupported color")

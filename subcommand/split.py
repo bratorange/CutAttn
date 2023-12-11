@@ -28,7 +28,8 @@ class SplitData(Subcommand):
 
         with open(trainval_file, 'w') as f_trainval, open(test_file, 'w') as f_test:
             for i, file_name in enumerate(images):
+                file_name = Path(file_name).name
                 if i < 0.6 * len(images):
-                    f_trainval.write(file_name[:-4] + '\n')
+                    f_trainval.write(file_name + '\n')
                 else:
-                    f_test.write(file_name[:-4] + '\n')
+                    f_test.write(file_name + '\n')

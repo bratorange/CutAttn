@@ -3,7 +3,7 @@ from argparse import ArgumentParser
 from pathlib import Path
 
 import numpy as np
-from evaluation import get_epochs, get_eval_file
+from evaluation import get_experiment, get_eval_file
 from .subcommand import Subcommand, register_subcommand
 
 
@@ -21,7 +21,7 @@ class Score(Subcommand):
 
         epoch = args.epoch
 
-        _, _, name = get_epochs(experiments, args)
+        _, _, name = get_experiment(experiments, args)
 
         print(f"Evaluating {name} at epoch {epoch}")
         if args.dry:
@@ -101,7 +101,7 @@ class ScoresAll(Subcommand):
 
     @staticmethod
     def invoke(experiments, args):
-        _, epochs, experiment_name = get_epochs(experiments, args)
+        _, epochs, experiment_name = get_experiment(experiments, args)
 
         scores = []
         for epoch in epochs:

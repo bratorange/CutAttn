@@ -1,25 +1,40 @@
-from pathlib import Path
+import os
+from collections import namedtuple
 
 import torch
-from collections import namedtuple
-import os
-from typing import Tuple, List, Dict, Optional, Union
 
 color_code = namedtuple('colorcode', ['name', 'color'])
 
 n_classes = 7
 
-label_codes = [color_code(name='bg', color=(127,127,127)),
-               color_code(name='abwall', color=(210,140,140)),
-               color_code(name='liver', color=(255,114,114)),
-               color_code(name='fat', color=(186,183,75)),
-               color_code(name='grasper', color=(170,255,0)),
-               color_code(name='hook', color=(169,255,184)),
-               color_code(name='ligament', color=(111,74,0)),
-               color_code(name='gall', color=(255,160,165))]
+label_codes = {
+    'cholec8K':
+    [
+        color_code(name='bg', color=(127,127,127)),
+        color_code(name='abwall', color=(210,140,140)),
+        color_code(name='liver', color=(255,114,114)),
+        color_code(name='fat', color=(186,183,75)),
+        color_code(name='grasper', color=(170,255,0)),
+        color_code(name='hook', color=(169,255,184)),
+        color_code(name='ligament', color=(111,74,0)),
+        color_code(name='gall', color=(255,160,165))
+    ],
+    'li2it':
+    [
+        color_code( name="Void", color=0 ),
+        color_code(name="Diaphragm", color=77),
+        color_code( name="Liver", color=26 ),
+        color_code( name="Fat", color=102 ),
+        color_code(name="ToolTip", color=153),
+        color_code(name="ToolShaft", color=179),
+        color_code( name="Ligament", color=128 ),
+        color_code( name="Gallbladder", color=51 ),
+    ],
+
+}
 
 
-def label_to_channel(col_mask, labelColors=label_codes):
+def label_to_channel(col_mask, labelColors):
     """
     Function to modify the labels in Cholec8K dataset
     - There are 8 classes in total. The hook & grasper are fused 
@@ -37,7 +52,10 @@ def label_to_channel(col_mask, labelColors=label_codes):
         lc = labelColors[i]
         if i>=5:
             i-=1
-        mask = (col_mask[0,:,:] == lc.color[0])*(col_mask[1,:,:] == lc.color[1])*(col_mask[2,:,:] == lc.color[2])
+        if type(lc.color) is int:
+            mask = (col_mask[0, :, :] == lc.color)
+        else:
+            mask = (col_mask[0,:,:] == lc.color[0])*(col_mask[1,:,:] == lc.color[1])*(col_mask[2,:,:] == lc.color[2])
         #if lc.name == "hook":
         #    lbl[mask] = 4
         lbl[0][mask] = i

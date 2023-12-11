@@ -2,7 +2,7 @@ import copy
 import os
 from argparse import ArgumentParser
 
-from evaluation import get_epochs
+from evaluation import get_experiment
 from .subcommand import Subcommand, register_subcommand
 
 
@@ -10,14 +10,14 @@ from .subcommand import Subcommand, register_subcommand
 class TestAll(Subcommand):
     @staticmethod
     def populate_subparser(sc_parser: ArgumentParser):
-        sc_parser.add_argument('experiment_id', type=str)
+        sc_parser.add_argument('experiment_id', type=int)
         sc_parser.add_argument("--dry", action='store_true')
         sc_parser.add_argument('--batch_size', type=int, default=4)
         sc_parser.add_argument("--num_test", type=int, default=50)
 
     @staticmethod
     def invoke(experiments, args):
-        experiment, epochs, name = get_epochs(experiments, args)
+        experiment, epochs, name = get_experiment(experiments, args)
         for epoch in epochs:
             command = "python test.py " + str(
                 copy.deepcopy(experiment).set(epoch=epoch, num_test=args.num_test).remove('continue_train', "lr",
@@ -33,7 +33,7 @@ class TestAll(Subcommand):
 class Test(Subcommand):
     @staticmethod
     def populate_subparser(sc_parser: ArgumentParser):
-        sc_parser.add_argument('experiment_id', type=str)
+        sc_parser.add_argument('experiment_id', type=int)
         sc_parser.add_argument("--dry", action='store_true')
         sc_parser.add_argument('--batch_size', type=int, default=4)
         sc_parser.add_argument("--num_test", type=int, default=50)
