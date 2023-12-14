@@ -3,7 +3,7 @@ from argparse import ArgumentParser
 from pathlib import Path
 
 import numpy as np
-from evaluation import get_experiment, get_eval_file
+from evaluation import get_experiment, get_eval_file, get_score_file
 from .subcommand import Subcommand, register_subcommand
 
 
@@ -118,6 +118,6 @@ class ScoresAll(Subcommand):
         scores = [result["scores"] for result in scores]
         scores = np.array(scores)
         scores = np.transpose(scores)
-        np.savez(get_eval_file(experiment_name), metric_names=metric_names, scores=scores, epochs=epochs)
+        np.savez(get_score_file(experiment_name), metric_names=metric_names, scores=scores, epochs=epochs)
 
         print(scores)

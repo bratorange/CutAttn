@@ -1,6 +1,6 @@
 from argparse import ArgumentParser
 
-from evaluation import get_experiment, get_eval_file
+from evaluation import get_experiment, get_eval_file, get_score_file
 from .subcommand import Subcommand, register_subcommand
 
 
@@ -12,7 +12,6 @@ class VisScores(Subcommand):
 
     @staticmethod
     def invoke(experiments, args):
-        from pathlib import Path
 
         import numpy as np
         from matplotlib import pyplot as plt

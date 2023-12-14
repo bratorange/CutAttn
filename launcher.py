@@ -11,7 +11,7 @@ experiments = {
     1: Options(
         name="baseline_01",
         netG="resnet_9blocks",
-        netD="basic_spectral_norm",
+        netD="basic",
     ),
     2: Options(
         name="resnet_atn_02_continue_from_10",
@@ -154,27 +154,13 @@ experiments = {
 }
 experiments.update({
     30+i: Options(
-        name=f"resnet_adain_{30+i}_from_{x}",
+        name=f"resnet_adain_{30+i}_from_start_low_lr_multiple_{i}",
         netG="resnet_adain",
         netD="basic",
-        ada_norm_layers="12",
-        pretrained_name="baseline_01",
-        epoch=x,
-    ).set(**({} if x == 0 else {"continue_train": ""}))
-    for i, x in enumerate([0, 1, 2, 4, 8])
-})
-
-experiments.update({
-    40+i: Options(
-        name=f"resnet_atn_{40+i}_from_{x}_low_lr",
-        netG="resnet_atn",
-        netD="basic_spectral_norm",
-        ada_norm_layers="12,13",
-        pretrained_name="baseline_01",
+        ada_norm_layers=x,
         lr=0.00002,
-        epoch=x,
-    ).set(**({} if x == 0 else {"continue_train": ""}))
-    for i, x in enumerate([0, 1, 2, 4, 8])
+    )
+    for i, x in enumerate(["12", "12,13", "12,13,14", "12,13,14,15"])
 })
 
 experiments.update({

@@ -1,17 +1,39 @@
+import copy
 from argparse import ArgumentParser
 from pathlib import Path
 from pprint import pprint
-import os
 
 import numpy as np
 
-from evaluation import get_experiment
-from evaluation.dataset_creation import create_dataloader
+from evaluation import get_experiments, get_eval_file
 from .subcommand import Subcommand, register_subcommand
 
 
 @register_subcommand
-class EvalSeg(Subcommand):
+class EvalAll(Subcommand):
+    @staticmethod
+    def populate_subparser(sc_parser: ArgumentParser):
+        sc_parser.add_argument("--weights_name", default="default")
+        sc_parser.add_argument('experiment_id', type=str)
+
+    def invoke(experiments, args):
+        for experiment, epochs, name, args in get_experiments(experiments, args):
+            iou = []
+            for epoch in epochs:
+                print(f"Evaluating iou scores for epoch {epoch} from {name}")
+                args = copy.deepcopy(args)
+                args.epoch = str(epoch)
+                args.mode = 'cut'
+                iou.append(Eval.invoke(experiments, args, show=False))
+
+            scores = [[*x.values()] for x in iou]
+            scores = np.array(scores).transpose()
+
+            metric_names = [*iou[0].keys()]
+            np.savez(get_eval_file(name), metric_names=metric_names, scores=scores, epochs=epochs)
+
+@register_subcommand
+class Eval(Subcommand):
     @staticmethod
     def populate_subparser(sc_parser: ArgumentParser):
         sc_parser.add_argument("--weights_name", default="default")
@@ -25,7 +47,7 @@ class EvalSeg(Subcommand):
         test_parser.add_argument("dataset_root", type=str)
 
     @staticmethod
-    def invoke(experiments, args):
+    def invoke(experiments, args, show=True):
         add_circle = True
         resize = True
         weight_path = Path("logs/weights/") / (args.weights_name + ".ckpt")
@@ -37,6 +59,7 @@ class EvalSeg(Subcommand):
         import torch
         from matplotlib import pyplot as plt
         from evaluation.model import Model
+        from evaluation.dataset_creation import create_dataloader
 
 
         trainer = pl.Trainer(
@@ -51,31 +74,34 @@ class EvalSeg(Subcommand):
         test_metrics = trainer.test(model, dataloaders=test_dataloader, verbose=False)
         pprint(test_metrics)
 
-        batch = next(iter(test_dataloader))
+        if show:
+            batch = next(iter(test_dataloader))
 
-        with torch.no_grad():
-            model.eval()
-            logits = model(batch["image"])
-        pr_masks = logits.sigmoid()
+            with torch.no_grad():
+                model.eval()
+                logits = model(batch["image"])
+            pr_masks = logits.sigmoid()
 
-        for image, gt_mask, pr_mask in zip(batch["image"], batch["mask"], pr_masks):
-            plt.figure(figsize=(10, 5))
+            for image, gt_mask, pr_mask in zip(batch["image"], batch["mask"], pr_masks):
+                plt.figure(figsize=(10, 5))
 
-            plt.subplot(1, 3, 1)
-            plt.imshow(image.numpy().transpose(1, 2, 0))  # convert CHW -> HWC
-            plt.title("Image")
-            plt.axis("off")
+                plt.subplot(1, 3, 1)
+                plt.imshow(image.numpy().transpose(1, 2, 0))  # convert CHW -> HWC
+                plt.title("Image")
+                plt.axis("off")
 
-            plt.subplot(1, 3, 2)
-            plt.imshow(gt_mask.numpy().squeeze())
-            plt.title("Ground truth")
-            plt.axis("off")
+                plt.subplot(1, 3, 2)
+                plt.imshow(gt_mask.numpy().squeeze())
+                plt.title("Ground truth")
+                plt.axis("off")
 
-            index_pred_mask = torch.argmax(pr_mask, dim=0, keepdim=False)
+                index_pred_mask = torch.argmax(pr_mask, dim=0, keepdim=False)
 
-            plt.subplot(1, 3, 3)
-            plt.imshow(index_pred_mask.numpy())
-            plt.title("Prediction")
-            plt.axis("off")
+                plt.subplot(1, 3, 3)
+                plt.imshow(index_pred_mask.numpy())
+                plt.title("Prediction")
+                plt.axis("off")
 
-            plt.show()
+                plt.show()
+
+        return test_metrics[0]
