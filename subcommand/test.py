@@ -2,7 +2,7 @@ import copy
 import os
 from argparse import ArgumentParser
 
-from evaluation import get_experiment
+from evaluation import get_experiment, get_experiments
 from .subcommand import Subcommand, register_subcommand
 
 
@@ -17,7 +17,7 @@ class TestAll(Subcommand):
 
     @staticmethod
     def invoke(experiments, args):
-        for experiment, epochs, name in get_experiments(experiments, args):
+        for experiment, epochs, name, args in get_experiments(experiments, args):
             for epoch in epochs:
                 command = "python test.py " + str(
                     copy.deepcopy(experiment).set(epoch=epoch, num_test=args.num_test).remove('continue_train', "lr",

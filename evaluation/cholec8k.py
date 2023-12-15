@@ -5,7 +5,8 @@ import torch
 
 color_code = namedtuple('colorcode', ['name', 'color'])
 
-n_classes = 7
+label_names = ['background', 'abwall', 'liver', 'fat', 'tool', 'ligament', 'gallbladder']
+n_classes = len(label_names)
 
 label_codes = {
     'cholec8K':

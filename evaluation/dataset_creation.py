@@ -9,7 +9,8 @@ from evaluation.cholec8k import label_codes
 from evaluation.split_dataset import SplitDataset
 
 
-def create_dataloader(experiments, args, split_filename, add_circle=False, resize=False, shuffle=False, use_split=True, k_fold=0,):
+def create_dataloader(experiments, args, split_filename, add_circle=False, resize=False, shuffle=False, use_split=True,
+                      k_fold=0, create_valid=False, ):
     use_cut_output = args.mode == "cut"
 
     if use_cut_output:
@@ -32,9 +33,22 @@ def create_dataloader(experiments, args, split_filename, add_circle=False, resiz
         filenames = [x.name for x in image_folder.iterdir()]
 
     if k_fold == 0:
-        dataset = SplitDataset(filenames, image_folder, mask_folder, colorcodes, add_circle=add_circle, resize=resize)
-        dataloader = DataLoader(dataset, batch_size=16, shuffle=shuffle, num_workers=os.cpu_count())
-        return dataloader
+        if create_valid:
+            train = [x for i, x in enumerate(filenames) if i % 10 != 0]
+            valid = [x for i, x in enumerate(filenames) if i % 10 == 0]
+            return (
+                DataLoader(
+                    SplitDataset(train, image_folder, mask_folder, colorcodes, add_circle=add_circle, resize=resize),
+                    batch_size=16, shuffle=False, num_workers=os.cpu_count()),
+                DataLoader(
+                    SplitDataset(valid, image_folder, mask_folder, colorcodes, add_circle=add_circle, resize=resize),
+                    batch_size=16, shuffle=False, num_workers=os.cpu_count()),
+            )
+        else:
+            dataset = SplitDataset(filenames, image_folder, mask_folder, colorcodes, add_circle=add_circle,
+                                   resize=resize)
+            dataloader = DataLoader(dataset, batch_size=16, shuffle=shuffle, num_workers=os.cpu_count())
+            return dataloader
 
     else:
         # do the kfold splits

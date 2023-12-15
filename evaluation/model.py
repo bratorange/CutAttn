@@ -1,8 +1,9 @@
 import torch
 import pytorch_lightning as pl
 import segmentation_models_pytorch as smp
+from torchmetrics.classification import MulticlassJaccardIndex
 
-from evaluation.cholec8k import n_classes
+from evaluation.cholec8k import n_classes, label_names
 
 
 class Model(pl.LightningModule):
@@ -20,6 +21,8 @@ class Model(pl.LightningModule):
 
         # for image segmentation dice loss could be the best first choice
         self.loss_fn = smp.losses.DiceLoss(smp.losses.MULTICLASS_MODE, from_logits=True)
+
+        self.mji_metric = MulticlassJaccardIndex(num_classes=n_classes, average=None)
 
     def forward(self, image):
         # normalize image here
@@ -70,12 +73,15 @@ class Model(pl.LightningModule):
         # these values will be aggregated in the end of an epoch
         tp, fp, fn, tn = smp.metrics.get_stats(index_pred_mask.long(), mask.long(), mode="multiclass", num_classes=n_classes)
 
+        mji = self.mji_metric(index_pred_mask.long(), mask.long())
+
         return {
             "loss": loss,
             "tp": tp,
             "fp": fp,
             "fn": fn,
             "tn": tn,
+            "mji": mji
         }
 
     def shared_epoch_end(self, outputs, stage):
@@ -84,6 +90,7 @@ class Model(pl.LightningModule):
         fp = torch.cat([x["fp"] for x in outputs])
         fn = torch.cat([x["fn"] for x in outputs])
         tn = torch.cat([x["tn"] for x in outputs])
+        mji = torch.stack([x["mji"] for x in outputs])
 
         # per image IoU means that we first calculate IoU score for each image
         # and then compute mean over these scores
@@ -96,10 +103,17 @@ class Model(pl.LightningModule):
         # Empty images influence a lot on per_image_iou and much less on dataset_iou.
         dataset_iou = smp.metrics.iou_score(tp, fp, fn, tn, reduction="micro")
 
+        per_class_iou = torch.mean(mji, dim=0)
+
         metrics = {
-            f"{stage}_per_image_iou": per_image_iou,
-            f"{stage}_dataset_iou": dataset_iou,
+            f"per_image_iou": per_image_iou,
+            f"dataset_iou": dataset_iou,
         }
+
+        metrics.update({
+            f"label_{label_names[i]}_iou": x for i, x in enumerate(per_class_iou.tolist())
+        })
+
 
         self.log_dict(metrics, prog_bar=True)
 

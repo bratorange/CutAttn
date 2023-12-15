@@ -259,11 +259,11 @@ def define_G(input_nc, output_nc, ngf, netG, norm='batch', use_dropout=False, in
     if netG == 'resnet_atn':
         net = AdaNormResnet(input_nc, output_nc, ngf, norm_layer=norm_layer, use_dropout=use_dropout,
                             no_antialias=no_antialias, no_antialias_up=no_antialias_up, n_blocks=9, opt=opt,
-                            ada_norm_layers=[int(i) for i in opt.ada_norm_layers.split(',')], )
+                            ada_norm_layers=opt.ada_norm_layers, )
     elif netG == 'resnet_adain':
         net = AdaNormResnet(input_nc, output_nc, ngf, norm_layer=norm_layer, use_dropout=use_dropout,
                             no_antialias=no_antialias, no_antialias_up=no_antialias_up, n_blocks=9, opt=opt, adain=True,
-                            ada_norm_layers=[int(i) for i in opt.ada_norm_layers.split(',')], )
+                            ada_norm_layers=opt.ada_norm_layers, )
     elif netG == 'resnet_9blocks':
         net = ResnetGenerator(input_nc, output_nc, ngf, norm_layer=norm_layer, use_dropout=use_dropout,
                               no_antialias=no_antialias, no_antialias_up=no_antialias_up, n_blocks=9, opt=opt)
@@ -1070,7 +1070,7 @@ class AdaNormResnet(ResnetGenerator):
         feat = input
         feats = []
         for layer_id, layer in enumerate(self.model):
-            if max(self.ada_norm_layers) >= layer_id:
+            if len(self.ada_norm_layers) > 0 and max(self.ada_norm_layers) >= layer_id:
                 style_feats = layer(style_feats)
                 current_style_feat = style_feats
             # print(layer_id, layer)

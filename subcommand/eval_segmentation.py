@@ -1,11 +1,12 @@
 import copy
+import json
 from argparse import ArgumentParser
 from pathlib import Path
 from pprint import pprint
 
 import numpy as np
 
-from evaluation import get_experiments, get_eval_file
+from evaluation import get_experiments, get_eval_file, get_experiment
 from .subcommand import Subcommand, register_subcommand
 
 
@@ -13,8 +14,8 @@ from .subcommand import Subcommand, register_subcommand
 class EvalAll(Subcommand):
     @staticmethod
     def populate_subparser(sc_parser: ArgumentParser):
-        sc_parser.add_argument("--weights_name", default="default")
         sc_parser.add_argument('experiment_id', type=str)
+        sc_parser.add_argument("--weights", default="default")
 
     def invoke(experiments, args):
         for experiment, epochs, name, args in get_experiments(experiments, args):
@@ -24,6 +25,7 @@ class EvalAll(Subcommand):
                 args = copy.deepcopy(args)
                 args.epoch = str(epoch)
                 args.mode = 'cut'
+                args.save = False
                 iou.append(Eval.invoke(experiments, args, show=False))
 
             scores = [[*x.values()] for x in iou]
@@ -36,8 +38,9 @@ class EvalAll(Subcommand):
 class Eval(Subcommand):
     @staticmethod
     def populate_subparser(sc_parser: ArgumentParser):
-        sc_parser.add_argument("--weights_name", default="default")
+        sc_parser.add_argument("--weights", default="default")
         subparsers = sc_parser.add_subparsers(dest='mode')
+        sc_parser.add_argument("--save", action="store_true")
 
         cut_parser = subparsers.add_parser("cut")
         cut_parser.add_argument('experiment_id', type=int)
@@ -50,9 +53,14 @@ class Eval(Subcommand):
     def invoke(experiments, args, show=True):
         add_circle = True
         resize = True
-        weight_path = Path("logs/weights/") / (args.weights_name + ".ckpt")
+        weight_path = Path("logs/weights/") / (args.weights + ".ckpt")
         use_split = True
         split_filename = "test.txt"
+        if args.mode == "cut":
+            _, _, experiment_name = get_experiment(experiments, args)
+            name = f"{experiment_name}_{args.epoch}"
+        else:
+            name = args.dataset_root
 
 
         import pytorch_lightning as pl
@@ -73,6 +81,12 @@ class Eval(Subcommand):
         # run test dataset
         test_metrics = trainer.test(model, dataloaders=test_dataloader, verbose=False)
         pprint(test_metrics)
+
+        test_metrics = test_metrics[0]
+        if args.save:
+            file = Path("thesis_data") / f"{args.weights}_{name}.json"
+            with open(file, "w") as fd:
+                json.dump(test_metrics, fd)
 
         if show:
             batch = next(iter(test_dataloader))
@@ -104,4 +118,5 @@ class Eval(Subcommand):
 
                 plt.show()
 
-        return test_metrics[0]
+
+        return test_metrics

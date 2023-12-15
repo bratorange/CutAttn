@@ -10,7 +10,7 @@ from .subcommand import Subcommand, register_subcommand
 class TrainSeg(Subcommand):
     @staticmethod
     def populate_subparser(sc_parser: ArgumentParser):
-        sc_parser.add_argument("--n_splits", type=int, default=3)
+        sc_parser.add_argument("--pretrained", type=str, default=None)
         subparsers = sc_parser.add_subparsers(dest='mode')
 
         cut_parser = subparsers.add_parser("cut")
@@ -25,11 +25,13 @@ class TrainSeg(Subcommand):
 
         ##########  Variables   ##########
         split_filename = "trainval.txt"
-        n_splits = args.n_splits
-        name = get_experiment(experiments, args)[2] if args.mode == "cut" else Path(args.dataset_root).name
+        if args.pretrained:
+            pretrained_path = Path(args.pretrained)
+            name = f"{pretrained_path.parts[-4]}_finetuned"
+        else:
+            name = f"{get_experiment(experiments, args)[2]}_{args.epoch}" if args.mode == "cut" else Path(args.dataset_root).name
         add_circle = True
         resize = True
-        shuffle = True
         ##################################
 
         # import here to not slow down the launcher
@@ -38,31 +40,31 @@ class TrainSeg(Subcommand):
         from pytorch_lightning.callbacks import ModelCheckpoint
         from evaluation.model import Model
 
-        datasets = create_dataloader(experiments, args, split_filename, add_circle=add_circle, resize=resize, shuffle=shuffle, use_split=True, k_fold=n_splits)
-        # train one model for every split
-        for k, (train_dataloader, valid_dataloader) in enumerate(datasets):
-            print(f"\nTraining split {k+1} of {len(datasets)}")
-            trainer = pl.Trainer(
-                gpus=1,
-                max_epochs=100,
-                enable_checkpointing=True,
-                callbacks=[ModelCheckpoint(
-                    filename='{epoch}-{valid_per_image_iou}-{i}',
-                    save_top_k=1,
-                    mode='max',
-                    monitor='valid_per_image_iou',
-                    verbose=True,
-                )],
-                logger = loggers.TensorBoardLogger(
-                    version=f"k={k}",
-                    save_dir="./logs",
-                    name = name,
-                )
+        train_dataloader, valid_dataloader = create_dataloader(
+            experiments, args, split_filename, add_circle=add_circle, resize=resize,
+            use_split=True, create_valid=True)
+        trainer = pl.Trainer(
+            gpus=1,
+            max_epochs=100,
+            enable_checkpointing=True,
+            callbacks=[ModelCheckpoint(
+                filename='{epoch}-{valid_per_image_iou}',
+                save_top_k=2,
+                mode='max',
+                monitor='valid_per_image_iou',
+                verbose=True,
+            )],
+            logger=loggers.TensorBoardLogger(
+                save_dir="./logs",
+                name=name,
             )
-
+        )
+        if args.pretrained is None:
             model = Model()
-            trainer.fit(
-                model,
-                train_dataloaders=train_dataloader,
-                val_dataloaders=valid_dataloader,
-            )
+        else:
+            model = Model.load_from_checkpoint(args.pretrained)
+        trainer.fit(
+            model,
+            train_dataloaders=train_dataloader,
+            val_dataloaders=valid_dataloader,
+        )

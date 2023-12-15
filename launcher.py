@@ -164,14 +164,14 @@ experiments.update({
 })
 
 experiments.update({
-    50+i: Options(
-        name=f"resnet_atn_{50+i}_from_start_low_lr_multiple_{len(x.split(','))}",
+    49+i: Options(
+        name=f"resnet_atn_{49+i}_from_start_low_lr_multiple_{i}",
         netG="resnet_atn",
         netD="basic_spectral_norm",
         ada_norm_layers=x,
         lr=0.00002,
     )
-    for i, x in enumerate(["12", "12,13", "12,13,14", "12,13,14,15"])
+    for i, x in enumerate(["", "12", "12,13", "12,13,14", "12,13,14,15"])
 })
 
 # general parameters for every experiment

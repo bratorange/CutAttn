@@ -19,7 +19,7 @@ class CUTModel(BaseModel):
     def modify_commandline_options(parser, is_train=True):
         """  Configures options specific for CUT model
         """
-        parser.add_argument('--ada_norm_layers', type=str, default='13', help = 'On which layers to apply the adaptive style normalization')
+        parser.add_argument('--ada_norm_layers', type=str, default='13', nargs='?', help = 'On which layers to apply the adaptive style normalization')
         parser.add_argument('--CUT_mode', type=str, default="CUT", choices='(CUT, cut, FastCUT, fastcut)')
 
         parser.add_argument('--lambda_GAN', type=float, default=1.0, help='weight for GAN loss：GAN(G(X))')
@@ -62,6 +62,10 @@ class CUTModel(BaseModel):
         self.loss_names = ['G_GAN', 'D_real', 'D_fake', 'G', 'NCE']
         self.visual_names = ['real_A', 'fake_B', 'real_B']
         self.nce_layers = [int(i) for i in self.opt.nce_layers.split(',')]
+        if opt.ada_norm_layers is None:
+            opt.ada_norm_layers = []
+        else:
+            opt.ada_norm_layers = [int(i) for i in opt.ada_norm_layers.split(',')]
 
         if opt.nce_idt and self.isTrain:
             self.loss_names += ['NCE_Y']

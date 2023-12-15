@@ -1,5 +1,7 @@
 from argparse import ArgumentParser
 
+from matplotlib import cm
+
 from evaluation import get_experiment, get_eval_file, get_score_file
 from .subcommand import Subcommand, register_subcommand
 
@@ -15,6 +17,7 @@ class VisScores(Subcommand):
 
         import numpy as np
         from matplotlib import pyplot as plt
+        multiscale = False
 
         experiment, epochs, name = get_experiment(experiments, args)
 
@@ -23,16 +26,23 @@ class VisScores(Subcommand):
         scores = loaded_data['scores']
         epochs = loaded_data['epochs']
 
-        markers = ['o', 'v', 's', '*']
-        colors = ['red', 'blue', 'yellow', 'green']
+        colors = cm.rainbow(np.linspace(0, 1, len(metric_names)))
 
-        for i, (score_name, score, marker, color) in enumerate(zip(metric_names, scores, markers, colors)):
-            if i == 0:
-                fig, axes = plt.subplots()
-                axes.set_xlabel("epoch")
+        for i, (score_name, score, color) in enumerate(zip(metric_names, scores, colors)):
+            if multiscale:
+                if i == 0:
+                    fig, axes = plt.subplots()
+                    axes.set_xlabel("epoch")
+                else:
+                    axes = axes.twinx()
+                axes.plot(epochs, score, marker="v", color=color)
+                axes.set_ylabel(score_name)
             else:
-                axes = axes.twinx()
-            axes.plot(epochs, score, marker=marker, color=color)
-            axes.set_ylabel(score_name)
+                plt.plot(epochs, score, marker="v", color=color)
+
+        plt.xticks(np.arange(min(epochs), max(epochs) + 1, 1.0))
+        plt.yticks(np.arange(0, scores.max() + .02, .02))
+        plt.legend(metric_names)
+        plt.grid()
         plt.title(name)
         plt.show()
