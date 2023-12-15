@@ -7,7 +7,7 @@ from .subcommand import Subcommand, register_subcommand
 
 
 @register_subcommand
-class VisScores(Subcommand):
+class Vis(Subcommand):
     @staticmethod
     def populate_subparser(sc_parser: ArgumentParser):
         sc_parser.add_argument("experiment_id", type=int)
