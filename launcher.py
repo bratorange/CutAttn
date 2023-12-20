@@ -160,7 +160,18 @@ experiments.update({
         ada_norm_layers=x,
         lr=0.00002,
     )
-    for i, x in enumerate(["12", "12,13", "12,13,14", "12,13,14,15"])
+    for i, x in enumerate(["", "12", "12,13", "12,13,14", "12,13,14,15"])
+})
+
+experiments.update({
+    40+i: Options(
+        name=f"basic_{40+i}_from_imagenet_{x}_spectral_norm",
+        netD="basic_spectral_norm",
+        pretrained_name="pretrain_22",
+        epoch=x,
+        lr=0.00002
+    ).set(**({} if x == 0 else {"continue_train": ""}))
+    for i, x in enumerate([0, 2, 4, 8, 15])
 })
 
 experiments.update({

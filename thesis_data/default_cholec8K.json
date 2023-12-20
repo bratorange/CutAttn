@@ -1,0 +1,1 @@
+{"test_per_image_iou": 0.7838272452354431, "test_dataset_iou": 0.782922625541687, "test_background_iou": 0.7882298827171326, "test_abwall_iou": 0.8113467693328857, "test_liver_iou": 0.7411034107208252, "test_fat_iou": 0.774988055229187, "test_tool_iou": 0.7106896638870239, "test_ligament_iou": 0.37748104333877563, "test_gallbladder_iou": 0.7940580248832703}

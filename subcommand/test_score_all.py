@@ -1,7 +1,7 @@
 import copy
 from argparse import ArgumentParser
 
-from . import TestAll, ScoresAll, VisScores
+from . import TestAll, ScoresAll, Vis
 from .subcommand import Subcommand, register_subcommand
 
 
@@ -22,4 +22,4 @@ class TestScoreAll(Subcommand):
             args.experiment_id = int(experiment_id)
             TestAll.invoke(experiments, args)
             ScoresAll.invoke(experiments, args)
-            VisScores.invoke(experiments, args)
+            Vis.invoke(experiments, args)
