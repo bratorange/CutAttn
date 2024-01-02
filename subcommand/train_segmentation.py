@@ -48,10 +48,10 @@ class TrainSeg(Subcommand):
             max_epochs=100,
             enable_checkpointing=True,
             callbacks=[ModelCheckpoint(
-                filename='{epoch}-{valid_per_image_iou}',
+                filename='{epoch}-{per_image_iou}',
                 save_top_k=2,
                 mode='max',
-                monitor='valid_per_image_iou',
+                monitor='per_image_iou',
                 verbose=True,
             )],
             logger=loggers.TensorBoardLogger(

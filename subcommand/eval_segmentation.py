@@ -15,7 +15,7 @@ class EvalAll(Subcommand):
     @staticmethod
     def populate_subparser(sc_parser: ArgumentParser):
         sc_parser.add_argument('experiment_id', type=str)
-        sc_parser.add_argument("--weights", default="default")
+        sc_parser.add_argument("--weights", default="logs/weights/default.ckpt")
 
     def invoke(experiments, args):
         for experiment, epochs, name, args in get_experiments(experiments, args):
@@ -53,14 +53,14 @@ class Eval(Subcommand):
     def invoke(experiments, args, show=True):
         add_circle = True
         resize = True
-        weight_path = Path("logs/weights/") / (args.weights + ".ckpt")
+        weight_path = Path(args.weights)
         use_split = True
         split_filename = "test.txt"
         if args.mode == "cut":
             _, _, experiment_name = get_experiment(experiments, args)
             name = f"{experiment_name}_{args.epoch}"
         else:
-            name = args.dataset_root
+            name = Path(args.dataset_root).name
 
 
         import pytorch_lightning as pl
@@ -84,7 +84,7 @@ class Eval(Subcommand):
 
         test_metrics = test_metrics[0]
         if args.save:
-            file = Path("thesis_data") / f"{args.weights}_{name}.json"
+            file = Path("thesis_data") / f"{weight_path.stem}_{name}.json"
             with open(file, "w") as fd:
                 json.dump(test_metrics, fd)
 
