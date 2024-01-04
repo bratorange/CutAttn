@@ -1,6 +1,9 @@
 import numpy as np
 import torch
-from PIL import Image
+from PIL import Image, ImageFile
+
+# https://stackoverflow.com/questions/42462431/oserror-broken-data-stream-when-reading-image-file
+ImageFile.LOAD_TRUNCATED_IMAGES = True
 from torchvision import transforms
 
 from data.transform import constant_circle_mask
