@@ -14,9 +14,10 @@ experiments = {
         netD="basic",
     ),
     2: Options(
-        name="resnet_atn_02_continue_from_10",
-        netG="resnet_atn",
-        continue_train="",
+        name="baseline_02",
+        netG="resnet_9blocks",
+        netD="basic",
+        lr=0.00002,
     ),
     3: Options(
         name="resnet_atn_03_from_start_trans_at_16",

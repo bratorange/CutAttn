@@ -3,7 +3,7 @@ from argparse import ArgumentParser
 from pathlib import Path
 
 import numpy as np
-from evaluation import get_experiment, get_eval_file, get_score_file
+from evaluation import get_experiment, get_experiments, get_eval_file, get_score_file
 from .subcommand import Subcommand, register_subcommand
 
 
@@ -95,29 +95,29 @@ class Score(Subcommand):
 class ScoresAll(Subcommand):
     @staticmethod
     def populate_subparser(sc_parser: ArgumentParser):
-        sc_parser.add_argument('experiment_id', type=int)
+        sc_parser.add_argument('experiment_id', type=str)
         sc_parser.add_argument('--batch_size', type=int, default=4)
         sc_parser.add_argument("--dry", action='store_true')
 
     @staticmethod
     def invoke(experiments, args):
-        _, epochs, experiment_name = get_experiment(experiments, args)
+        for experiment, epochs, name, args in get_experiments(experiments, args):
 
-        scores = []
-        for epoch in epochs:
-            downstream_args = copy.deepcopy(args)
-            setattr(downstream_args, "epoch", epoch)
-            scores.append(Score.invoke(experiments, downstream_args))
-        if args.dry:
-            return
+            scores = []
+            for epoch in epochs:
+                downstream_args = copy.deepcopy(args)
+                setattr(downstream_args, "epoch", epoch)
+                scores.append(Score.invoke(experiments, downstream_args))
+            if args.dry:
+                return
 
-        # strip metric names out of the return type
-        metric_names = np.array(scores[0]["score_names"])
+            # strip metric names out of the return type
+            metric_names = np.array(scores[0]["score_names"])
 
-        # scores: turn list(dict(list)) into list(list())
-        scores = [result["scores"] for result in scores]
-        scores = np.array(scores)
-        scores = np.transpose(scores)
-        np.savez(get_score_file(experiment_name), metric_names=metric_names, scores=scores, epochs=epochs)
+            # scores: turn list(dict(list)) into list(list())
+            scores = [result["scores"] for result in scores]
+            scores = np.array(scores)
+            scores = np.transpose(scores)
+            np.savez(get_score_file(name), metric_names=metric_names, scores=scores, epochs=epochs)
 
-        print(scores)
+            print(scores)
