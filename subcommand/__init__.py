@@ -7,3 +7,4 @@ from .test import *
 from .eval_segmentation import *
 
 from .test_score_all import *
+from .sample_images import *
