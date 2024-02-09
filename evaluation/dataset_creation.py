@@ -39,15 +39,15 @@ def create_dataloader(experiments, args, split_filename, add_circle=False, resiz
             return (
                 DataLoader(
                     SplitDataset(train, image_folder, mask_folder, colorcodes, add_circle=add_circle, resize=resize),
-                    batch_size=16, shuffle=False, num_workers=os.cpu_count()),
+                    batch_size=8, shuffle=False, num_workers=0),
                 DataLoader(
                     SplitDataset(valid, image_folder, mask_folder, colorcodes, add_circle=add_circle, resize=resize),
-                    batch_size=16, shuffle=False, num_workers=os.cpu_count()),
+                    batch_size=8, shuffle=False, num_workers=0),
             )
         else:
             dataset = SplitDataset(filenames, image_folder, mask_folder, colorcodes, add_circle=add_circle,
                                    resize=resize)
-            dataloader = DataLoader(dataset, batch_size=16, shuffle=shuffle, num_workers=os.cpu_count())
+            dataloader = DataLoader(dataset, batch_size=16, shuffle=shuffle, num_workers=0)
             return dataloader
 
     else:
@@ -61,9 +61,9 @@ def create_dataloader(experiments, args, split_filename, add_circle=False, resiz
 
         dataloaders = [(
             DataLoader(SplitDataset(train, image_folder, mask_folder, colorcodes, add_circle=add_circle, resize=resize),
-                       batch_size=16, shuffle=shuffle, num_workers=os.cpu_count()),
+                       batch_size=16, shuffle=shuffle,),
             DataLoader(SplitDataset(valid, image_folder, mask_folder, colorcodes, add_circle=add_circle, resize=resize),
-                       batch_size=16, shuffle=shuffle, num_workers=os.cpu_count()),
+                       batch_size=16, shuffle=shuffle,),
         )
             for train, valid in split_filenames
         ]

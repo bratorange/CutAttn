@@ -38,7 +38,7 @@ class EvalAll(Subcommand):
 class Eval(Subcommand):
     @staticmethod
     def populate_subparser(sc_parser: ArgumentParser):
-        sc_parser.add_argument("--weights", default="default")
+        sc_parser.add_argument("--weights", default="logs/weights/default.ckpt")
         subparsers = sc_parser.add_subparsers(dest='mode')
         sc_parser.add_argument("--save", action="store_true")
 
@@ -69,7 +69,6 @@ class Eval(Subcommand):
         from evaluation.model import Model
         from evaluation.dataset_creation import create_dataloader
 
-
         trainer = pl.Trainer(
             gpus=1,
             max_epochs=1,
@@ -84,7 +83,7 @@ class Eval(Subcommand):
 
         test_metrics = test_metrics[0]
         if args.save:
-            file = Path("thesis_data") / f"{weight_path.stem}_{name}.json"
+            file = Path("thesis_data") / f"{name}.json"
             with open(file, "w") as fd:
                 json.dump(test_metrics, fd)
 

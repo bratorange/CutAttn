@@ -68,3 +68,5 @@ class TrainSeg(Subcommand):
             train_dataloaders=train_dataloader,
             val_dataloaders=valid_dataloader,
         )
+        best_path = trainer.checkpoint_callback.best_model_path
+        return best_path
