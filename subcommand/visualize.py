@@ -38,6 +38,7 @@ class Vis(Subcommand):
                 path /= metric_type
                 path.mkdir(exist_ok=True)
                 path  /= f"{name}_{metric_type}.csv"
+                table = table.transpose()
                 np.savetxt(path, table, delimiter=",", fmt='%s')
 
             else:

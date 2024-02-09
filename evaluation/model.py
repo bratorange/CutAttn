@@ -92,15 +92,8 @@ class Model(pl.LightningModule):
         tn = torch.cat([x["tn"] for x in outputs])
         mji = torch.stack([x["mji"] for x in outputs])
 
-        # per image IoU means that we first calculate IoU score for each image
-        # and then compute mean over these scores
-        per_image_iou = smp.metrics.iou_score(tp, fp, fn, tn, reduction="micro-imagewise")
 
-        # dataset IoU means that we aggregate intersection and union over whole dataset
-        # and then compute IoU score. The difference between dataset_iou and per_image_iou scores
-        # in this particular case will not be much, however for dataset
-        # with "empty" images (images without target class) a large gap could be observed.
-        # Empty images influence a lot on per_image_iou and much less on dataset_iou.
+        per_image_iou = smp.metrics.iou_score(tp, fp, fn, tn, reduction="micro-imagewise")
         dataset_iou = smp.metrics.iou_score(tp, fp, fn, tn, reduction="micro")
 
         per_class_iou = torch.mean(mji, dim=0)
