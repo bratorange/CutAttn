@@ -45,7 +45,7 @@ class SegBest(Subcommand):
             print(f"Finetuning done for {name} epoch {max_epoch}. Evaluating {best_path}")
 
             # 4. eval trained models
-            eval_args = argparse.Namespace(weights=best_path, mode='test', dataset_root='cholec8K', save=True)
+            eval_args = argparse.Namespace(weights=best_path, mode='test', dataset_root='cholec8K', save=name)
             test_metrics = Eval.invoke(experiments, eval_args, show=False)
             print(f"Received test_metrics for {name} epoch {max_epoch}:")
             print(test_metrics)

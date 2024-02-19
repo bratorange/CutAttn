@@ -40,7 +40,7 @@ class Eval(Subcommand):
     def populate_subparser(sc_parser: ArgumentParser):
         sc_parser.add_argument("--weights", default="logs/weights/default.ckpt")
         subparsers = sc_parser.add_subparsers(dest='mode')
-        sc_parser.add_argument("--save", action="store_true")
+        sc_parser.add_argument("--save", type=str)
 
         cut_parser = subparsers.add_parser("cut")
         cut_parser.add_argument('experiment_id', type=int)
@@ -83,7 +83,8 @@ class Eval(Subcommand):
 
         test_metrics = test_metrics[0]
         if args.save:
-            file = Path("thesis_data") / f"{name}.json"
+            file = Path("thesis_data") / f"{args.save}.json"
+            print(f"Saving to {file}")
             with open(file, "w") as fd:
                 json.dump(test_metrics, fd)
 
