@@ -1,0 +1,1 @@
+{"per_image_iou": 0.7966139316558838, "dataset_iou": 0.7951764464378357, "label_background_iou": 0.7722076177597046, "label_abwall_iou": 0.8584717512130737, "label_liver_iou": 0.7356938123703003, "label_fat_iou": 0.8203164935112, "label_tool_iou": 0.8680271506309509, "label_ligament_iou": 0.374219685792923, "label_gallbladder_iou": 0.827117919921875}
