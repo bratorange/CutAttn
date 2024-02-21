@@ -36,6 +36,7 @@ class SampleImgs(Subcommand):
             all_images = list(Path("dataset/testA_label").iterdir())
             random.shuffle(all_images)
             image_files = all_images[:args.n_images]
+            image_files = [x.name() for x in image_files]
         print(f"Sampling images from:")
         models = np.array(args.models)
         ids = models[:, 0]
@@ -49,7 +50,6 @@ class SampleImgs(Subcommand):
             target = folder / f"{name}_{epoch}"
             target.mkdir(exist_ok=True)
             for img_name in image_files:
-                img_name = img_name.name
                 mask_path = Path("dataset/testA_label") / img_name
                 realA_path = Path(f"results/{name}/test_{epoch}/images/real_A") / img_name
                 realB_path = Path(f"results/{name}/test_{epoch}/images/real_B") / img_name
